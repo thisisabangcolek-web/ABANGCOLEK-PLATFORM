@@ -27,6 +27,7 @@ export default function ScrollWorldHero({ onNavigate }: { onNavigate: (path: str
   const [hotspotOpen, setHotspotOpen] = useState(false);
   const staticMode = Boolean(reducedMotion || motionPaused || shortViewport);
   const { active, phase, direction, visible, selectScene, releaseScene } = useSceneController({ sectionRef, enabled: !staticMode, blocked: hotspotOpen, sceneCount: chapters.length });
+  const productPhotoVisible = !staticMode && active === 0;
   const modeRef = useRef({ staticMode, motionPaused, active });
   modeRef.current = { staticMode, motionPaused, active };
   const modeChangeRef = useRef<ModeChangeSnapshot | null>(null);
@@ -126,9 +127,10 @@ export default function ScrollWorldHero({ onNavigate }: { onNavigate: (path: str
       </div>
       <div className="ac-world-shade" aria-hidden="true" />
       {!staticMode && <div className="ac-world-animation"><AnimatedColekWorld active={active} phase={phase} direction={direction} paused={!visible || hotspotOpen} /></div>}
-      {!staticMode && active === 0 && <figure className="ac-world-product-photo">
+      {/* A native touch keeps its starting target until touchend; retain this node across scenes. */}
+      {!staticMode && <figure className="ac-world-product-photo" aria-hidden={!productPhotoVisible}>
         <div><img src={BRAND_ASSETS.productEditorial.src} alt={BRAND_ASSETS.productEditorial.alt} width={405} height={720} decoding="async" fetchPriority="high" /></div>
-        <figcaption><strong>Sambal Colek</strong><a href={BRAND_ASSETS.productEditorial.source} target="_blank" rel="noopener noreferrer">Foto TikTok rasmi <ArrowUpRight size={12} /></a></figcaption>
+        <figcaption><strong>Sambal Colek</strong><a href={BRAND_ASSETS.productEditorial.source} inert={!productPhotoVisible} tabIndex={productPhotoVisible ? undefined : -1} target="_blank" rel="noopener noreferrer">Foto TikTok rasmi <ArrowUpRight size={12} /></a></figcaption>
       </figure>}
       <div className="ac-world-topline">
         <span className="ac-world-edition"><Box size={15} /> THE ABANGCOLEK WORLD</span>

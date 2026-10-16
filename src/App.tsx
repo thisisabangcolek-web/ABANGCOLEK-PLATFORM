@@ -33,7 +33,9 @@ import {
   Truck,
   Gauge,
   Sun,
-  Moon
+  Moon,
+  ShoppingBag,
+  Store
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { JevAssessmentCard } from '@/features/jev';
@@ -57,6 +59,8 @@ import { useSupabaseAuth } from '@/services/supabaseAuth';
 import '@/components/workspace-sidebar.css';
 
 import { OrdersView } from '@/components/OrdersView';
+import { KioskStorefrontView } from '@/components/KioskStorefrontView';
+import { AgentRestockPortalView } from '@/components/AgentRestockPortalView';
 
 import { BusFreightView } from '@/components/BusFreightView';
 import { AgentPerformanceView } from '@/components/AgentPerformanceView';
@@ -866,6 +870,7 @@ const BottomNav = ({
 }) => {
   const menuItems = [
     { id: 'dashboards', label: 'Utama', icon: Activity },
+    { id: 'kiosk', label: 'Kios', icon: ShoppingBag },
     { id: 'orders', label: 'Pesanan', icon: Database },
     { id: 'discovery', label: 'Kualiti', icon: Flame },
     { id: 'chat', label: 'Pembantu', icon: Bot },
@@ -1098,6 +1103,8 @@ export default function App() {
             {activeTab === 'meet' && <MeetView onAction={handleAction} />}
             {activeTab === 'chat_workspace' && <ChatWorkspaceView onAction={handleAction} />}
             {activeTab === 'maps' && <MapsView onAction={handleAction} />}
+            {activeTab === 'kiosk' && <KioskStorefrontView onAction={handleAction} />}
+            {activeTab === 'agent_portal' && <AgentRestockPortalView onAction={handleAction} />}
             {activeTab === 'orders' && <OrdersView onAction={handleAction} />}
             {activeTab === 'reviews' && <ReviewsView onAction={handleAction} />}
             {activeTab === 'reports' && <ReportsView onAction={handleAction} />}

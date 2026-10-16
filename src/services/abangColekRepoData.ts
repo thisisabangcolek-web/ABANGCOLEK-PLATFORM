@@ -37,6 +37,16 @@ export interface BrandTagline {
   emoji: string;
 }
 
+export type SocialEvidenceStatus = "OBSERVED_SOCIAL" | "PENDING_FOUNDER_APPROVAL" | "QUARANTINED";
+
+export interface QuarantinedSocialRecord<T> {
+  status: SocialEvidenceStatus;
+  reason: string;
+  source: string;
+  capturedAt: string;
+  value: T;
+}
+
 export interface WhatsAppTemplate {
   id: string;
   name: string;
@@ -63,112 +73,32 @@ export interface WocsExecutionResult {
 }
 
 // 1. TikTok Viral Hooks Bank
-export const TIKTOK_VIRAL_HOOKS: TikTokViralHook[] = [
-  {
-    id: "hook-1",
-    text: "Pedas sampai menangis tapi masih nak lagi! 🌶️😭",
-    tags: ["reaction", "pedas", "viral"],
-    performance: { views: 125000, likes: 8900, shares: 450, engagement: 7.5 },
-    usedCount: 12,
-    createdAt: "2026-01-01T00:00:00Z"
-  },
-  {
-    id: "hook-2",
-    text: "Rahsia sambal yang buat pelanggan jatuh cinta 🥭🌶️",
-    tags: ["product", "sambal", "tips"],
-    performance: { views: 89000, likes: 6200, shares: 320, engagement: 7.3 },
-    usedCount: 8,
-    createdAt: "2025-12-15T00:00:00Z"
-  },
-  {
-    id: "hook-3",
-    text: "Dari booth kecil ke viral TikTok - Journey Abang Colek 📈",
-    tags: ["founder", "motivation", "story"],
-    performance: { views: 210000, likes: 15400, shares: 890, engagement: 7.8 },
-    usedCount: 5,
-    createdAt: "2025-11-20T00:00:00Z"
-  },
-  {
-    id: "hook-4",
-    text: "3 cara makan Colek yang ramai tak tahu! 🤯",
-    tags: ["tips", "product", "viral"],
-    performance: { views: 156000, likes: 11200, shares: 670, engagement: 7.6 },
-    usedCount: 15,
-    createdAt: "2026-01-10T00:00:00Z"
-  },
-  {
-    id: "hook-5",
-    text: "Behind the scenes: Prep 100 boxes untuk event 🎪",
-    tags: ["bts", "event", "hustle"],
-    performance: { views: 67000, likes: 4800, shares: 210, engagement: 7.5 },
-    usedCount: 6,
-    createdAt: "2026-01-05T00:00:00Z"
-  },
-  {
-    id: "hook-6",
-    text: "Customer reaction: First time try Jumbo Colek! 😱",
-    tags: ["reaction", "customer", "jumbo"],
-    performance: { views: 98000, likes: 7100, shares: 380, engagement: 7.7 },
-    usedCount: 10,
-    createdAt: "2026-01-12T00:00:00Z"
-  },
-  {
-    id: "hook-7",
-    text: "POV: Kau order level pedas 10 🔥💀",
-    tags: ["pov", "pedas", "challenge"],
-    performance: { views: 187000, likes: 13200, shares: 720, engagement: 7.5 },
-    usedCount: 18,
-    createdAt: "2025-12-25T00:00:00Z"
-  },
-  {
-    id: "hook-8",
-    text: "Kenapa sambal kami MANIS dulu baru PEDAS? 🥭🌶️",
-    tags: ["product", "education", "unique"],
-    performance: { views: 143000, likes: 9800, shares: 540, engagement: 7.2 },
-    usedCount: 9,
-    createdAt: "2025-12-18T00:00:00Z"
-  },
-  {
-    id: "hook-9",
-    text: "Bila customer tanya 'Ada yang kurang pedas tak?' 😅",
-    tags: ["funny", "customer", "relatable"],
-    performance: { views: 112000, likes: 8100, shares: 410, engagement: 7.4 },
-    usedCount: 7,
-    createdAt: "2026-01-08T00:00:00Z"
-  },
-  {
-    id: "hook-10",
-    text: "Setup booth dari pagi sampai malam - Worth it! 💪",
-    tags: ["hustle", "bts", "motivation"],
-    performance: { views: 45000, likes: 3200, shares: 150, engagement: 7.4 },
-    usedCount: 4,
-    createdAt: "2025-11-10T00:00:00Z"
-  }
-];
+// QUARANTINED: tiada hook per-video dan metrik yang disahkan dalam snapshot sosial.
+export const TIKTOK_VIRAL_HOOKS: TikTokViralHook[] = [];
 
 // 2. Motivational Quotes Bank
 export const MOTIVATIONAL_QUOTES: MotivationalQuote[] = [
-  { id: "1", quote: "Rasa Sekali, Jatuh Cinta Selamanya", author: "Abang Colek", category: "product" },
-  { id: "2", quote: "Pedas Manis Likat Melekat - Macam perniagaan, kena ada balance!", author: "Founder (Epull)", category: "business" },
-  { id: "3", quote: "Setiap event adalah peluang untuk buat customer jatuh cinta", author: "Founder (Epull)", category: "growth" },
-  { id: "4", quote: "Dari dapur rumah ke seluruh Malaysia - Mimpi boleh jadi kenyataan", author: "Founder Story", category: "founder" },
-  { id: "5", quote: "Bukan calang-calang pedas, bukan calang-calang usahawan", author: "Abang Colek", category: "business" },
-  { id: "6", quote: "Konsisten macam rasa sambal kita - Hari-hari padu!", author: "Founder (Epull)", category: "growth" },
-  { id: "7", quote: "Setiap booth adalah stage untuk showcase passion kita", author: "Founder (Epull)", category: "business" },
-  { id: "8", quote: "Sticky macam sambal, memorable macam brand", author: "Abang Colek", category: "product" }
+  { id: "social-pending-1", quote: "Tiada petikan founder yang disahkan secara post-level dalam snapshot ini.", author: "Status: PENDING_FOUNDER_APPROVAL", category: "founder" }
 ];
 
 // 3. Taglines
-export const BRAND_TAGLINES: BrandTagline[] = [
-  { id: "1", text: "Rasa Padu, Pedas Menggamit", context: "formal", emoji: "🌶️" },
-  { id: "2", text: "PEDAS MANIS LIKAT MELEKAT", context: "social", emoji: "🌶️🥭" },
-  { id: "3", text: "Rasa Sekali Jatuh Cinta Selamanya", context: "emotional", emoji: "❤️" },
-  { id: "4", text: "Pedas Tapi Puas", context: "social", emoji: "🌶️" },
-  { id: "5", text: "Colek Sampai Licin", context: "social", emoji: "🥭" },
-  { id: "6", text: "Bukan Calang-Calang Pedas", context: "formal", emoji: "🌶️" }
-];
+// Official brand copy must not be promoted from an unapproved social snapshot.
+export const BRAND_TAGLINES: BrandTagline[] = [];
+
+export const QUARANTINED_BRAND_TAGLINES: QuarantinedSocialRecord<BrandTagline[]> = {
+  status: "PENDING_FOUNDER_APPROVAL",
+  reason: "Observed in social material, but not approved as the current official brand manifest.",
+  source: "social snapshot referenced by the repository data review",
+  capturedAt: "UNKNOWN",
+  value: [
+  { id: "social-tagline-1", text: "PEDAS MANIS LIKAT MELEKAT", context: "social", emoji: "🌶️🥭" },
+  { id: "social-tagline-2", text: "Rasa Sekali Jatuh Cinta Selamanya", context: "emotional", emoji: "❤️" },
+  { id: "social-tagline-3", text: "AN INDESCRIBABLE SENSATION", context: "social", emoji: "" }
+  ]
+};
 
 // 4. Booth Ops Checklists
+// This is a draft operational template, not evidence that an event, stock or payment setup exists.
 export const BOOTH_OPS_CHECKLISTS = {
   preEvent: [
     "Semak inventory sambal (kiraan botol/pek)",
@@ -179,7 +109,7 @@ export const BOOTH_OPS_CHECKLISTS = {
     "Bungkus merchandise (sticker, flyer, business card)",
     "Siapkan cooler box bersama ice pack",
     "Brief staff tentang USP produk dan struktur pricing",
-    "Uji kelancaran sistem pembayaran DuitNow QR pay",
+    "Sahkan kaedah pembayaran yang diluluskan owner sebelum acara",
     "Sediakan shot list untuk rakaman video TikTok"
   ],
   duringEvent: [
@@ -208,176 +138,12 @@ export const BOOTH_OPS_CHECKLISTS = {
 };
 
 // 5. WhatsApp Message Templates
-export const WHATSAPP_TEMPLATES: WhatsAppTemplate[] = [
-  {
-    id: "cs-welcome",
-    name: "Welcome Message",
-    category: "customer_service",
-    trigger: ["hi", "hello", "hey", "assalamualaikum", "salam"],
-    message: `Assalamualaikum! 🌶️
-Terima kasih kerana hubungi *Abang Colek*!
-Kami sedia bantu anda:
-1️⃣ Info produk & harga
-2️⃣ Lokasi event & booth
-3️⃣ Lucky draw & promosi
-4️⃣ Tempah order
-
-_"PEDAS MANIS STAYS"_ 🥭🌶️
-Sila taip nombor atau soalan anda!`,
-    requiresAdmin: false,
-    createdAt: "2026-01-16T00:00:00Z"
-  },
-  {
-    id: "cs-product-info",
-    name: "Product Information & Pricing",
-    category: "customer_service",
-    trigger: ["produk", "product", "sambal", "harga", "price", "berapa"],
-    message: `🌶️ *ABANG COLEK - SAMBAL COLEK*
-
-✨ *Pilihan Produk Kami:*
-• Sambal Colek Original (Pedas Manis)
-• Sambal Colek Extra Pedas 🔥
-• Sambal Colek Mango Twist 🥭
-
-📦 *Saiz & Harga Rasmi:*
-• 250ml - RM15
-• 500ml - RM28
-• 1 Liter - RM50
-
-🎁 *Promosi Hari Ini:*
-Beli 3 botol PERCUMA 1 botol!
-
-💬 Nak order? Sila balas *"ORDER"* sekarang!`,
-    requiresAdmin: false,
-    createdAt: "2026-01-16T00:00:00Z"
-  },
-  {
-    id: "cs-location",
-    name: "Event & Booth Location",
-    category: "customer_service",
-    trigger: ["lokasi", "location", "event", "booth", "mana", "where"],
-    message: `📍 *LOKASI BOOTH ABANG COLEK*
-
-Kami kini beroperasi di:
-📅 *Event Semasa:*
-{current_events}
-
-📢 Ikuti TikTok rasmi kami untuk siaran langsung:
-@styloairpool
-
-🔔 Ingin makluman acara baharu? Balas *"DAFTAR EVENT"*`,
-    requiresAdmin: false,
-    variables: ["current_events"],
-    createdAt: "2026-01-16T00:00:00Z"
-  },
-  {
-    id: "event-register",
-    name: "Event Registration",
-    category: "event",
-    trigger: ["daftar event", "register event", "join event"],
-    message: `📝 *PENDAFTARAN ACARA ABANG COLEK*
-
-Terima kasih berminat hadir! Sila berikan maklumat berikut:
-1. Nama penuh:
-2. Nombor telefon WhatsApp:
-3. Acara pilihan:
-
-Contoh:
-Ahmad bin Ali
-0123456789
-Makan Fest KL Gateway
-
-Admin kami akan sahkan pendaftaran dalam tempoh 24 jam! ✅`,
-    requiresAdmin: false,
-    createdAt: "2026-01-16T00:00:00Z"
-  },
-  {
-    id: "lucky-draw-info",
-    name: "Lucky Draw Campaign Info",
-    category: "lucky_draw",
-    trigger: ["lucky draw", "cabutan", "contest", "hadiah", "prize", "menang"],
-    message: `🎁 *LUCKY DRAW ABANG COLEK*
-
-*Hadiah Utama:*
-1 TAHUN BEKALAN PERCUMA ABANG COLEK!
-(12 botol x 12 bulan)
-
-*Syarat Penyertaan:*
-1️⃣ Ikuti @styloairpool di TikTok
-2️⃣ Kongsi video kami ke Story anda
-3️⃣ Tag 3 orang rakan di ruang komen
-4️⃣ Isi borang pendaftaran: {form_link}
-
-*Tarikh Tutup:* {end_date}
-Balas *"JOIN LUCKY DRAW"* untuk terima pautan borang!`,
-    requiresAdmin: false,
-    variables: ["form_link", "end_date"],
-    createdAt: "2026-01-16T00:00:00Z"
-  },
-  {
-    id: "order-inquiry",
-    name: "Order Inquiry & Booking",
-    category: "order",
-    trigger: ["order", "beli", "buy", "nak beli", "tempah", "booking"],
-    message: `🛒 *TEMPAHAN RASMI ABANG COLEK*
-
-Terima kasih atas sokongan! Sila kemukakan butiran pesanan anda:
-1. Produk & Saiz:
-2. Kuantiti:
-3. Alamat Penghantaran:
-4. Nama Penerima:
-5. Nombor Telefon:
-
-Contoh:
-Sambal Colek Original 500ml
-3 botol
-No 12, Jalan Sultan Ismail, 50250 KL
-Ahmad
-0123456789
-
-Admin kami akan kirakan sebut harga rasmi + caj pos laju! 📦`,
-    requiresAdmin: false,
-    createdAt: "2026-01-16T00:00:00Z"
-  },
-  {
-    id: "order-confirmation",
-    name: "Order Confirmation & Bank Details",
-    category: "order",
-    trigger: [],
-    message: `✅ *PESANAN DISAHKAN*
-
-Terima kasih {customer_name}!
-
-*Ringkasan Pesanan:*
-{order_details}
-
-*Jumlah Keseluruhan: RM{total}* (Termasuk kos penghantaran)
-
-*Akaun Pembayaran Rasmi:*
-Bank: *Maybank*
-No. Akaun: *1234567890*
-Nama Pemegang: *Liurleleh House*
-
-Sila muat naik resit transaksi selepas bayaran dibuat. Nombor penjejakan kurier akan diberikan dalam 1-2 hari bekerja. 📦`,
-    requiresAdmin: true,
-    variables: ["customer_name", "order_details", "total"],
-    createdAt: "2026-01-16T00:00:00Z"
-  }
-];
+// QUARANTINED: harga, promosi, lokasi, bank details dan WhatsApp API tidak terbukti melalui audit sosial.
+export const WHATSAPP_TEMPLATES: WhatsAppTemplate[] = [];
 
 // 6. Official Audio Anthem Metadata
-export const OFFICIAL_AUDIO_IDENTITY = {
-  title: "Kasi Lagi-Lagi",
-  artist: "Abang Colek",
-  company: "Liurleleh House",
-  genre: "Hip-Hop / Trap Anthem",
-  style: "Punchy, confident chant hook",
-  production: "Tight 808s, crisp percussion, minimal synth",
-  bpm: "85-95",
-  duration: "1:00",
-  audioUrl: "/audio/kasi-lagi-lagi.mp3",
-  lyricsSnippet: `ABANG CHO-LEK! SAMBAL CHO-LEK! PEDAS! PADU! SEKALI RASA. YOU KNOW. PEDAS MANIS. STAYS.`
-};
+// QUARANTINED: audio identity belum disahkan sebagai aset rasmi melalui source/rights evidence.
+export const OFFICIAL_AUDIO_IDENTITY = null;
 
 // 7. WOCS Command Parser (Mirror of server/wocs/commandParser.ts)
 export function parseWocsCommand(raw: string): WocsParsedCommand {
@@ -478,7 +244,7 @@ export function executeWocsCommand(cmd: WocsParsedCommand): WocsExecutionResult 
   }
 }
 
-// 9. Official 15-Slide Investor & Brand Pitch Deck (From abang-colek-brand-os presetData)
+// 9. Social-evidence pitch outline (not investor traction proof)
 export interface PitchDeckSlide {
   id: string;
   slideNumber: number;
@@ -489,170 +255,80 @@ export interface PitchDeckSlide {
 }
 
 export const PITCH_DECK_SLIDES: PitchDeckSlide[] = [
-  {
-    id: "slide-1",
-    slideNumber: 1,
-    title: "ABANG COLEK",
-    category: "Vision",
-    body: "Street Taste. Real Talk.\nBold street food brand built from the ground up.",
-    highlight: "Street Taste. Real Talk."
-  },
-  {
-    id: "slide-2",
-    slideNumber: 2,
-    title: "What We Are",
-    category: "Vision",
-    body: "Abang Colek ialah jenama street food berasaskan rasa ekstrem + karakter manusia, dibina melalui interaksi sebenar di jalanan dan dikuatkan oleh kandungan viral.",
-    highlight: "Rasa Ekstrem + Karakter Manusia"
-  },
-  {
-    id: "slide-3",
-    slideNumber: 3,
-    title: "Founder",
-    category: "Vision",
-    body: "Megat Shaifulreza — Pengasas & Wajah Jenama (Liurleleh House).\nFounder yang turun padang, menjual sendiri, bercakap sendiri, dan membina kepercayaan terus dengan pelanggan.",
-    highlight: "Founder Turun Padang"
-  },
-  {
-    id: "slide-4",
-    slideNumber: 4,
-    title: "Market Problem",
-    category: "Market",
-    body: "Street food banyak.\nJenama kuat, sedikit.\nRasa ada, karakter tiada.",
-    highlight: "Street Food Banyak, Karakter Tiada"
-  },
-  {
-    id: "slide-5",
-    slideNumber: 5,
-    title: "Our Answer",
-    category: "Product",
-    body: "Kami tidak jual makanan semata-mata.\nKami jual pengalaman, cabaran rasa, dan cerita persahabatan di jalanan.",
-    highlight: "Pengalaman & Cabaran Rasa"
-  },
-  {
-    id: "slide-6",
-    slideNumber: 6,
-    title: "Product Truth",
-    category: "Product",
-    body: "Pedas kami bukan gimik.\nReaksi tulen pelanggan adalah iklan terbaik yang tidak boleh dibeli dengan wang.",
-    highlight: "Reaksi Pelanggan Ialah Iklan Terbaik"
-  },
-  {
-    id: "slide-7",
-    slideNumber: 7,
-    title: "Brand DNA",
-    category: "Strategy",
-    body: "Pedas • Berani • Kelakar • Street\nEmpat tonggak yang membentuk setiap botol dan setiap interaksi gerai.",
-    highlight: "Pedas • Berani • Kelakar • Street"
-  },
-  {
-    id: "slide-8",
-    slideNumber: 8,
-    title: "Content Engine",
-    category: "Strategy",
-    body: "TikTok sebagai enjin utama.\nReaksi sebenar. Tiada skrip. Tiada lakonan. 100% natural engagement.",
-    highlight: "Tiada Skrip, Tiada Lakonan"
-  },
-  {
-    id: "slide-9",
-    slideNumber: 9,
-    title: "Target Audience",
-    category: "Market",
-    body: "Gen Z & Millennial urban.\nPeminat street culture dan makanan pedas.\nPencari pengalaman rasa, bukan produk kosong.",
-    highlight: "Gen Z & Millennial Street Culture"
-  },
-  {
-    id: "slide-10",
-    slideNumber: 10,
-    title: "Traction & Bukti Pasaran",
-    category: "Traction",
-    body: "Booth penuh sesak.\nVideo tular mencecah jutaan tontonan.\nKadar belian ulangan (repeat customer) yang luar biasa.",
-    highlight: "Booth Penuh & Repeat Customer Tinggi"
-  },
-  {
-    id: "slide-11",
-    slideNumber: 11,
-    title: "Competitive Edge",
-    category: "Strategy",
-    body: "Resipi dan rasa mungkin boleh ditiru pesaing.\nTetapi karakter, jiwa, dan ikatan founder dengan komuniti tidak boleh ditiru.",
-    highlight: "Rasa Boleh Ditiru, Karakter Tidak"
-  },
-  {
-    id: "slide-12",
-    slideNumber: 12,
-    title: "Expansion Pipeline",
-    category: "Strategy",
-    body: "Pop-up Event Tour → Barangan Dagangan (Merch) → Lagu Jenama Viral → Media & Francais Hab Serantau.",
-    highlight: "Ekspres Bas Logistics & Ejen Hab"
-  },
-  {
-    id: "slide-13",
-    slideNumber: 13,
-    title: "Vision 2026",
-    category: "Vision",
-    body: "Menjadi ikon street food Malaysia yang mempunyai tapak budaya (cultural footprint) kukuh di serata Nusantara.",
-    highlight: "Cultural Footprint Street Food"
-  },
-  {
-    id: "slide-14",
-    slideNumber: 14,
-    title: "Closing Statement",
-    category: "Vision",
-    body: "ABANG COLEK\nBukan semua orang tahan. Berani rasa, kau faham.",
-    highlight: "Bukan Semua Orang Tahan"
-  },
-  {
-    id: "slide-15",
-    slideNumber: 15,
-    title: "Hubungan & Rangkaian",
-    category: "Traction",
-    body: "TikTok: @styloairpool (75.2K Followers)\nInstagram: @abangcolek\nWhatsApp HQ: 6019-XXX-XXXX\nOperasi: Liurleleh House Malaysia",
-    highlight: "@styloairpool | Liurleleh House"
-  }
+  { id: "social-slide-1", slideNumber: 1, title: "ABANG COLEK", category: "Vision", body: "Founder-led F&B identity observed across public social profiles.", highlight: "Founder-led social identity" },
+  { id: "social-slide-2", slideNumber: 2, title: "Founder signal", category: "Vision", body: "@styloairpool appears as the founder/motivator identity across TikTok, Instagram, Facebook and Threads snapshots.", highlight: "One founder identity, several platform roles" },
+  { id: "social-slide-3", slideNumber: 3, title: "Observed product signals", category: "Product", body: "Public content shows colek fruit, sambal/colek in jars and fruit pickles. SKU, price, size and ownership remain unverified.", highlight: "Visual proof is not a catalogue" },
+  { id: "social-slide-4", slideNumber: 4, title: "Content engine", category: "Strategy", body: "Sensory proof, customer reaction, humour, founder motivation, event/community and cross-entity discovery are visible pillars.", highlight: "Content pillars from social evidence" },
+  { id: "social-slide-5", slideNumber: 5, title: "Platform roles", category: "Strategy", body: "TikTok drives reach; Instagram shows product proof; Facebook carries authority; Threads carries conversation and CTA.", highlight: "Different funnel jobs" },
+  { id: "social-slide-6", slideNumber: 6, title: "Entity separation", category: "Strategy", body: "ABANG COLEK, THE FAMOUS JERUX and LIURLELEH HOUSE appear related but must remain separately mapped until founder approval.", highlight: "Related is not identical" },
+  { id: "social-slide-7", slideNumber: 7, title: "Evidence boundary", category: "Traction", body: "Social metrics are snapshots. They do not prove stock, price, margin, payment details, legal ownership or conversion.", highlight: "Snapshot, not ledger" },
+  { id: "social-slide-8", slideNumber: 8, title: "Platform direction", category: "Traction", body: "ABANGCOLEK-PLATFORM should connect identity → content → product/entity → enquiry → event/order/dealer → evidence → learning.", highlight: "Founder-led Social Commerce OS" }
+];
+// 10. Working principles derived from social evidence, not approved manifestos
+
+export const BRAND_MANIFESTOS = [
+  { id: "working-principle-1", title: "Observed principle: real people", text: "Public content repeatedly shows founder presence, customer reactions, event activity and product experiences. This is an observation, not a founder-approved manifesto." },
+  { id: "working-principle-2", title: "Working principle: evidence before claim", text: "Use social content to understand identity and content patterns. Do not convert a post into price, SKU, stock, payment or ownership truth without a separate approved record." }
 ];
 
-// 10. Official Brand Manifestos
-export const BRAND_MANIFESTOS = [
-  {
-    id: "manifesto-1",
-    title: "Manifesto Rasa Jujur (Varian 1)",
-    text: "We believe taste shouldn't lie. Kalau pedas, biar pedas. Kalau berani, tunjuk berani. Kami bukan untuk semua orang — dan itu kekuatan kami.\n\nAbang Colek lahir dari jalanan, hidup dengan manusia, dan berkembang melalui cerita sebenar."
-  },
-  {
-    id: "manifesto-2",
-    title: "Manifesto Budaya Jalanan (Varian 2)",
-    text: "Street taste bukan trend. Ia budaya.\n\nKami bina jenama dengan reaksi sebenar, bukan lakonan. Kami menang dengan karakter, bukan kosmetik.\n\nAbang Colek: pedas yang jujur, berani yang konsisten."
-  }
-];
+// 11. TikTok observed content patterns and draft guardrails
 
 // 11. TikTok SOP Posting Cadence & Golden Rules
 export const TIKTOK_WEEKLY_CADENCE = [
-  { day: "Isnin", focus: "First Bite Reaction", description: "Fokus ekspresi muka pelanggan, gigitan pertama mangga/jambu bersalut kuah pekat." },
-  { day: "Rabu", focus: "Pedas Challenge", description: "Ujian keberanian pelanggan mencuba kuah pedas ekstra level 10 tanpa minum air." },
-  { day: "Jumaat", focus: "Founder Moment", description: "Megat Shaifulreza bercakap santai, menyakat pelanggan, atau berkongsi tips bisnes jalanan." },
-  { day: "Sabtu", focus: "Crowd Energy & Booth Hype", description: "Suasana gerai pack, barisan beratur panjang, dan jeritan krew 'KASI LAGI-LAGI!'." }
+  { day: "Observed", focus: "Sensory proof", description: "Close-up buah, kuah pekat, tekstur, gigitan dan reaksi rasa." },
+  { day: "Observed", focus: "Customer reaction", description: "First try, soalan, usikan dan reaksi spontan terhadap pedas/masam/kuah." },
+  { day: "Observed", focus: "Humor / relatable", description: "Situasi kereta, motor, kasut, parking dan dialog santai." },
+  { day: "Observed", focus: "Founder / event", description: "Motivasi, perjalanan, booth, packing, event dan aktiviti lapangan." }
 ];
 
 export const TIKTOK_GOLDEN_RULES = [
-  "Rakaman telefon pintar sahaja (elak kamera produksi terlalu formal)",
-  "Gunakan bahasa pasar dan dialek tempatan santai",
-  "Jangan over-polish atau sunting berlebihan",
-  "Jangan berlakon atau bayar reaksi palsu — biarkan reaksi tulen",
-  "Sentiasa gunakan audio jingle 'Kasi Lagi-Lagi' sebagai sound rasmi"
+  "Labelkan post sebagai observed social atau approved commercial content.",
+  "Pautkan setiap product claim kepada source URL atau evidence record.",
+  "Pisahkan reach content daripada conversion content.",
+  "Jangan gunakan caption lama untuk mengesahkan harga, stok, berat atau payment.",
+  "Kekalkan founder approval sebelum publish claim, offer atau reply sensitif."
 ];
 
+
 // 12. TikTok Profile Metrics & Bio Architecture (@styloairpool)
+// Safe export: no social snapshot metric or bio is treated as current official data.
 export const TIKTOK_PROFILE_METRICS = {
   handle: "@styloairpool",
-  brandName: "ABANG COLEK 🥭",
-  founderName: "Megat Shaifulreza (Epull)",
-  followers: "75.2K",
-  likes: "793.2K",
-  likesPerFollower: "10.5x (Super High Engagement)",
-  bio: "Founder | Motivator 📈\nPEDAS MANIS LIKAT MELEKAT 🌶️🥭\n\"Rasa Sekali Jatuh Cinta Selamanya\"",
+  brandName: "UNKNOWN — observed display name requires founder approval",
+  founderName: "UNKNOWN — founder identity is not normalized here",
+  followers: "UNKNOWN — social snapshot quarantined",
+  likes: "UNKNOWN — social snapshot quarantined",
+  likesPerFollower: "UNKNOWN — no derived metric stored as evidence",
+  bio: "UNKNOWN — current bio requires a dated source snapshot and founder approval",
   emojiStrategy: [
-    { emoji: "🌶️", meaning: "Cili & Pedas Ekstrem" },
-    { emoji: "🥭", meaning: "Mangga Lemak Manis Pembeda" },
-    { emoji: "📈", meaning: "Pertumbuhan Usahawan & Motivasi" }
+    { emoji: "UNKNOWN", meaning: "Not approved as brand architecture" }
   ]
+};
+
+export const QUARANTINED_TIKTOK_PROFILE_METRICS: QuarantinedSocialRecord<{
+  handle: string;
+  brandName: string;
+  founderName: string;
+  followers: string;
+  likes: string;
+  bio: string;
+  emojiStrategy: Array<{ emoji: string; meaning: string }>;
+}> = {
+  status: "QUARANTINED",
+  reason: "Social metrics and profile copy are snapshots; they do not prove current reach, ownership, product availability or approved brand language.",
+  source: "TikTok profile snapshot referenced by the repository data review",
+  capturedAt: "UNKNOWN",
+  value: {
+    handle: "@styloairpool",
+    brandName: "ABANG COLEK 🥭",
+    founderName: "UNKNOWN — founder name observed on Facebook, not normalized here",
+    followers: "76.7K",
+    likes: "827.4K",
+    bio: "Founder | Motivator 📈\nPEDAS MANIS LIKAT MELEKAT 🌶️🥭\n\"Rasa Sekali Jatuh Cinta Selamanya\"",
+    emojiStrategy: [
+      { emoji: "🌶️", meaning: "Cili & Pedas Ekstrem" },
+      { emoji: "🥭", meaning: "Mangga Lemak Manis Pembeda" },
+      { emoji: "📈", meaning: "Pertumbuhan Usahawan & Motivasi" }
+    ]
+  }
 };

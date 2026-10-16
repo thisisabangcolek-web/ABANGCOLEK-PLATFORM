@@ -109,7 +109,7 @@ function requestHint(text: string, mention: RegExp, request: RegExp, denial: Reg
 }
 
 const agentApplication = /\b(?:nak|mahu|ingin|want|apply|mohon|memohon)(?:\s+(?:to|jadi|become|join|sebagai|a|an|seorang)){0,3}\s+(?:ejen|agent|stokis|dealer)\b/;
-export const LOCAL_EVALUATOR_VERSION = 'local-rules-2.0.0';
+export const LOCAL_EVALUATOR_VERSION = 'local-rules-2.1.0';
 
 /** Zero-network baseline. Caller must authorize scope before supplying any state. */
 export function assessState(packId: JevPackId, state: JevState): JevAssessment {
@@ -123,8 +123,15 @@ export function assessState(packId: JevPackId, state: JevState): JevAssessment {
   const untrustedText = [text, ...(state.evidence ?? []).map(item => item.text)].join('\n');
   const claimText = [text, ...(state.evidence ?? []).filter(item => item.kind === 'CUSTOMER_CLAIM').map(item => item.text)].join('\n');
   const instruction = /\b(?:ignore|disregard|override)\b.{0,60}\b(?:instructions?|rules?|policy|system)\b|\babaikan\b.{0,60}\b(?:arahan|polisi|peraturan)\b|\b(?:system|assistant)\s*:/i.test(untrustedText);
-  const sarcasm = /(?:\/s\b|\b(?:sarcasm|sarcastic|sarkastik)\b)|\b(?:great|wonderful|excellent|terbaik|bagus)\b.{0,80}\b(?:bocor|leak|leaking)\b/i.test(claimText);
-  const leakagePhrase = /\b(?:bocor|leak|leaking)\b/;
+  const explicitSarcasm = /(?:\/s\b|\b(?:sarcasm|sarcastic|sarkastik)\b)/i.test(claimText);
+  const praisePhrase = /\b(?:great|wonderful|excellent|terbaik|bagus)\b/i;
+  const leakagePhrase = /\b(?:bocor|leak|leaking)\b/i;
+  // A sincere statement in another clause must not make a direct complaint sarcastic.
+  const claimClauses = clauses(claimText);
+  // Preserve short comma-separated irony without joining distinct sentences or evidence.
+  const ironyFragments = claimText.split(/[.!?;\n]|\b(?:tetapi|tapi|but|however)\b/i);
+  const repeatedComplaint = ironyFragments.some(fragment => /\b(?:great|wonderful|excellent|terbaik|bagus)\b.{0,80}(?:\b(?:another|again|lagi)\b.{0,30}\b(?:bocor|leak|leaking)\b|\b(?:bocor|leak|leaking)\b.{0,30}\b(?:another|again|lagi)\b)/i.test(fragment));
+  const sarcasm = explicitSarcasm || repeatedComplaint || claimClauses.some(clause => praisePhrase.test(clause) && leakagePhrase.test(clause));
   const leakageClauses = clauses(claimText).filter(clause => leakagePhrase.test(clause));
   const contradictory = leakageClauses.some(clause => !negation.test(clause)) && leakageClauses.some(clause => negation.test(clause));
   if (instruction || sarcasm || contradictory) {

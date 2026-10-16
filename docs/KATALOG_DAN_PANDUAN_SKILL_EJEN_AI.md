@@ -1,3 +1,6 @@
+<!-- ABANGCOLEK_DOC_AUTHORITY_V1 -->
+> **LEGACY_GUIDE — context diselaraskan 3 Oktober 2026.** Kandungan/metadata asal di bawah ialah bukti atau cadangan pada tarikh asal, bukan current runtime/authorization/release proof. Gunakan [Source of Truth](ABANGCOLEK-SOURCE-OF-TRUTH.md) dan [handover A–Z](handover/AGENT-HANDOVER-A-Z.md) untuk keputusan semasa. Server3000/3010 STOPPED pada snapshot20:25MYT; data kekal OS; Emons goal PAUSED. Native provider/benchmark/cost/complete claims perlu verifikasi sendiri.
+
 # KATALOG DAN PANDUAN PEMASANGAN SKILL EJEN AI (136 MODUL SKILL)
 **Dokumentasi Pemasangan & Pengaktifan Pustaka Kemahiran Kejuruteraan & Seni Bina Sistem**  
 *Tarikh Pemasangan: 2026-10-01 | Sistem: ABANGCOLEK-OS*  

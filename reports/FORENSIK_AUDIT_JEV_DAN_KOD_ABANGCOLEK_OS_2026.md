@@ -8,6 +8,12 @@ classification: "CONFIDENTIAL / INTERNAL AUDIT"
 lifecycle_status: "ACTIVE"
 ---
 
+<!-- ABANGCOLEK_DOC_AUTHORITY_V1 -->
+> **HISTORICAL_SNAPSHOT — context diselaraskan 3 Oktober 2026.** Kandungan/metadata asal di bawah ialah bukti atau cadangan pada tarikh asal, bukan current runtime/authorization/release proof. Gunakan [Source of Truth](../docs/ABANGCOLEK-SOURCE-OF-TRUTH.md) dan [handover A–Z](../docs/handover/AGENT-HANDOVER-A-Z.md) untuk keputusan semasa. Server3000/3010 STOPPED pada snapshot20:25MYT; data kekal OS; Emons goal PAUSED. Native provider/benchmark/cost/complete claims perlu verifikasi sendiri.
+>
+> Errata: ../../firebase-applet-config.json dari src/services menuju akar projek, bukan D:/; source semasa perlu dibaca semula. Supabase publishable bukan private credential; RLS/restrictions perlu audit. Maps exposure tidak membuktikan sebab quota error. Harga/saiz/pakej ialah historical assertions, bukan current approved catalogue.
+
+
 # 🌶️ LAPORAN FORENSIK & AUDIT PENUH KOD: ABANGCOLEK-OS
 **Penilai:** Hyper-Sovereign Conductor & System Architect  
 **Metodologi:** 5-Axis Code Review (`code-review-and-quality`), JEV System-1 Evaluation (`typesafe-ai`), & Bukti Tulen (`evidence-first-zero-guessing`)  

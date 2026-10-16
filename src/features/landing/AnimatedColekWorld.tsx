@@ -44,7 +44,8 @@ function SceneLabel({ number, title, x = 487, y = 117 }: { number: string; title
 
 function Selection({ id }: ArtProps) {
   return <>
-    <SceneLabel number="01" title="Pilih & connect" />
+    {/* Selection shares the upper-right artwork area with the editorial photo. */}
+    <SceneLabel number="01" title="Pilih & connect" x={350} />
     <ellipse cx="390" cy="342" rx="211" ry="92" className="ac-aw-orbit-line" transform="rotate(-13 390 342)" />
     <ellipse cx="390" cy="342" rx="250" ry="112" className="ac-aw-orbit-line ac-aw-orbit-line-outer" transform="rotate(12 390 342)" />
     <g className="ac-aw-layer ac-aw-selection-platform">

@@ -1,26 +1,58 @@
-import { mkdirSync,openSync,closeSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { runtimeConfig } from '../server/runtime-config';
+import { createRuntimeIdentity, isLocalBinding, probeRuntimeIdentity } from '../server/runtime-identity';
 
-// This command owns only the child processes it starts; existing listeners are never killed.
 const root=resolve(import.meta.dir,'..'),config=runtimeConfig(process.env);
-if(config.hostname==='0.0.0.0')throw new Error('Development launcher menggunakan local binding sahaja.');
-const target=`http://127.0.0.1:${config.port}`;
-mkdirSync(resolve(root,'var/log'),{recursive:true});
-const log=openSync(resolve(root,'var/log/dev-api.log'),'a');
-let apiProcess:ReturnType<typeof Bun.spawn>|null=null,uiProcess:ReturnType<typeof Bun.spawn>|null=null,stopping=false;
-function shutdown(code=0){if(stopping)return;stopping=true;uiProcess?.kill();apiProcess?.kill();closeSync(log);process.exit(code);}
-process.once('SIGINT',()=>shutdown());process.once('SIGTERM',()=>shutdown());
-async function ready(){
-  try{const response=await fetch(`${target}/api/platform/bootstrap-status`,{signal:AbortSignal.timeout(1200)});const data=await response.json();return response.ok&&data.ok===true&&data.data?.localOnly===true;}
-  catch{return false;}
+if(!isLocalBinding(config.hostname))throw new Error('Development launcher menggunakan local binding sahaja.');
+const runtimeRoot=resolve(root,config.runtimeRoot),target=config.target;
+const expected=createRuntimeIdentity({checkoutRoot:root,runtimeRoot});
+let log:number|null=null,apiProcess:ReturnType<typeof Bun.spawn>|null=null,uiProcess:ReturnType<typeof Bun.spawn>|null=null;
+let cleanupPromise:Promise<void>|undefined;
+
+function cleanup():Promise<void>{
+  return cleanupPromise??=(async()=>{
+    // Only children started by this launcher are owned; reused listeners remain alive.
+    const children=[uiProcess,apiProcess].filter((child):child is NonNullable<typeof child>=>child!==null);
+    for(const child of children)if(child.exitCode===null)child.kill();
+    await Promise.all(children.map(child=>child.exited));
+    if(log!==null){closeSync(log);log=null;}
+    if(apiProcess){
+      const pidPath=join(runtimeRoot,'run/platform.pid');
+      if(existsSync(pidPath)&&readFileSync(pidPath,'utf8')===String(apiProcess.pid))unlinkSync(pidPath);
+    }
+  })();
 }
-if(!await ready()){
-  apiProcess=Bun.spawn([process.execPath,'server/index.ts'],{cwd:root,env:process.env,stdout:log,stderr:log});
-  for(let attempt=0;attempt<40&&!await ready();attempt++){if(apiProcess.exitCode!==null)throw new Error('API gagal bermula. Semak var/log/dev-api.log; listener sedia ada tidak dihentikan.');await Bun.sleep(250);}
-  if(!await ready()){apiProcess.kill();throw new Error('API belum ready. Semak port dan var/log/dev-api.log.');}
-}else console.info(`Menggunakan API lokal yang tersedia di ${target}.`);
-uiProcess=Bun.spawn([process.execPath,'node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','3000','--strictPort'],{cwd:root,env:{...process.env,PLATFORM_API_TARGET:target},stdout:'inherit',stderr:'inherit'});
-console.info('ABANGCOLEK workspace: http://127.0.0.1:3000');
-if(apiProcess)void apiProcess.exited.then(code=>{if(!stopping){console.error(`API berhenti (${code}); UI akan dihentikan.`);shutdown(1);}});
-const code=await uiProcess.exited;shutdown(code);
+const onSignal=()=>{void cleanup().then(()=>process.exit(0),()=>process.exit(1));};
+process.once('SIGINT',onSignal);process.once('SIGTERM',onSignal);
+
+async function run():Promise<number>{
+  const initial=await probeRuntimeIdentity(target,expected);
+  if(initial==='occupied_invalid')throw new Error('API listener tidak sepadan atau tidak boleh disahkan. Tiada proses sedia ada dihentikan.');
+  if(initial==='unreachable'){
+    mkdirSync(join(runtimeRoot,'log'),{recursive:true});
+    log=openSync(join(runtimeRoot,'log/dev-api.log'),'a');
+    apiProcess=Bun.spawn([process.execPath,'server/index.ts'],{cwd:root,env:{...process.env,PLATFORM_RUNTIME_ROOT:runtimeRoot},stdout:log,stderr:log});
+    let ready=false;
+    for(let attempt=0;attempt<40;attempt++){
+      if(apiProcess.exitCode!==null)throw new Error('API gagal bermula. Semak runtime log yang dipilih.');
+      const result=await probeRuntimeIdentity(target,expected);
+      if(result==='reusable'){ready=true;break;}
+      if(result==='occupied_invalid')throw new Error('API identiti tidak sah. Listener luar tidak dihentikan.');
+      await Bun.sleep(250);
+    }
+    if(!ready)throw new Error('API belum ready dalam had masa. Semak runtime log yang dipilih.');
+  }else console.info(`Menggunakan API lokal yang sepadan di ${target}.`);
+  uiProcess=Bun.spawn([process.execPath,'node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','3000','--strictPort'],{cwd:root,env:{...process.env,PLATFORM_API_TARGET:target},stdout:'inherit',stderr:'inherit'});
+  console.info('ABANGCOLEK workspace: http://127.0.0.1:3000');
+  if(!apiProcess)return await uiProcess.exited;
+  const result=await Promise.race([uiProcess.exited.then(code=>({kind:'ui' as const,code})),apiProcess.exited.then(code=>({kind:'api' as const,code}))]);
+  if(result.kind==='api')throw new Error(`API milik launcher berhenti (${result.code}). UI akan dihentikan.`);
+  return result.code;
+}
+
+let exitCode=1;
+try{exitCode=await run();}
+catch(error){console.error(error instanceof Error?error.message:'Launcher gagal bermula.');}
+finally{try{await cleanup();}catch{console.error('Pembersihan runtime milik launcher gagal.');exitCode=1;}}
+process.exit(exitCode);

@@ -1,3 +1,8 @@
+<!-- ABANGCOLEK_DOC_AUTHORITY_V1 -->
+> **HISTORICAL_SNAPSHOT — context diselaraskan 3 Oktober 2026.** Kandungan/metadata asal di bawah ialah bukti atau cadangan pada tarikh asal, bukan current runtime/authorization/release proof. Gunakan [Source of Truth](ABANGCOLEK-SOURCE-OF-TRUTH.md) dan [handover A–Z](handover/AGENT-HANDOVER-A-Z.md) untuk keputusan semasa. Server3000/3010 STOPPED pada snapshot20:25MYT; data kekal OS; Emons goal PAUSED. Native provider/benchmark/cost/complete claims perlu verifikasi sendiri.
+>
+> Errata: Production-Active, <50ms, strict100% dan confidence-calibration bukan proof runtime semasa. Current JEV ialah LOCAL_RULES; native unavailable. Nama model lama bukan availability guarantee.
+
 # JEV AGENT ARCHITECTURE & DEVELOPER REFERENCE GUIDE
 **TypeSafe Justified Entity Validation (JEV) System-1 Integration in ABANGCOLEK-OS**  
 *System: ABANGCOLEK-OS (v4.2.0) | Target Engine: Gemini 2.5 (`gemini-3.8-flash`)*  

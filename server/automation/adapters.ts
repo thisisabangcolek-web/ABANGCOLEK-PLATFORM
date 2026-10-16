@@ -12,9 +12,18 @@ export interface ReadOnlyResearchTransport {
   zeroNewSpend: true;
   collect(request: ResearchRequest, signal: AbortSignal, onSource?: (source: unknown) => void): Promise<ResearchCollection>;
 }
+export interface PostizPublisherTransport {
+  zeroNewSpend: true;
+  channel: string;
+  publish(intent: PublishIntent, signal: AbortSignal): Promise<{ providerRef: string; status: 'published' | 'blocked' | 'unknown'; url?: string; reasonCode?: string }>;
+  reconcile(providerRef: string, signal: AbortSignal): Promise<{ status: 'published' | 'blocked' | 'unknown'; url?: string; reasonCode?: string }>;
+  cancel(providerRef: string, signal: AbortSignal): Promise<CancelOutcome>;
+}
+
 export interface AutomationOptions {
   hermes?: ReadOnlyHermesTransport;
   agentReach?: ReadOnlyResearchTransport;
+  postiz?: PostizPublisherTransport;
   externalUsage?: () => UsageSnapshot;
   timeoutMs?: number;
 }
@@ -46,13 +55,75 @@ export class HermesAdapter {
   }
 }
 
-/** Remote mutations are deliberately unimplemented until a separately approved channel pilot. */
+/** Verified pilot channel publisher adapter with bounded timeout and idempotency. */
 export class PostizPublisherAdapter {
-  async publish(intent: PublishIntent): Promise<PublishOutcome> {
-    return { intentId: text(intent.id, 'Intent ID', 120), status: 'blocked', evidenceIds: [], reasonCode: 'REMOTE_PUBLISH_DISABLED' };
+  constructor(readonly transport?: PostizPublisherTransport, readonly timeoutMs = 10_000) {}
+
+  async publish(intent: PublishIntent, signal: AbortSignal): Promise<PublishOutcome> {
+    const intentId = text(intent.id, 'Intent ID', 120);
+    if (!this.transport || this.transport.zeroNewSpend !== true) {
+      return { intentId, status: 'blocked', evidenceIds: [], reasonCode: 'REMOTE_PUBLISH_DISABLED' };
+    }
+    if (intent.channel !== this.transport.channel) {
+      return { intentId, status: 'blocked', evidenceIds: [], reasonCode: 'CHANNEL_NOT_SUPPORTED' };
+    }
+    if (signal.aborted) {
+      return { intentId, status: 'blocked', evidenceIds: [], reasonCode: 'REQUEST_ABORTED' };
+    }
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const operatorAbort = () => controller.abort();
+    signal.addEventListener('abort', operatorAbort, { once: true });
+    try {
+      const outcome = await Promise.race([
+        this.transport.publish(intent, controller.signal),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => {
+            controller.abort();
+            reject(new Error('POSTIZ_TIMEOUT'));
+          }, boundedTimeout(this.timeoutMs));
+        }),
+      ]);
+      return {
+        intentId,
+        status: outcome.status,
+        providerRef: outcome.providerRef,
+        evidenceIds: [],
+        reasonCode: outcome.reasonCode ?? (outcome.status === 'published' ? 'POSTIZ_PUBLISHED' : 'POSTIZ_FAILED'),
+      };
+    } catch {
+      return {
+        intentId,
+        status: 'unknown',
+        evidenceIds: [],
+        reasonCode: controller.signal.aborted && !signal.aborted ? 'POSTIZ_TIMEOUT' : 'POSTIZ_RESULT_UNVERIFIED',
+      };
+    } finally {
+      if (timer) clearTimeout(timer);
+      controller.abort();
+      signal.removeEventListener('abort', operatorAbort);
+    }
   }
-  async cancel(providerRef: string): Promise<CancelOutcome> {
-    return { providerRef: text(providerRef, 'Provider reference', 200), status: 'unknown', evidenceIds: [] };
+
+  async reconcile(providerRef: string, signal: AbortSignal = new AbortController().signal): Promise<{ status: 'published' | 'blocked' | 'unknown'; providerRef: string; url?: string; reasonCode: string }> {
+    const safeRef = text(providerRef, 'Provider reference', 200);
+    if (!this.transport || this.transport.zeroNewSpend !== true) {
+      return { status: 'unknown', providerRef: safeRef, reasonCode: 'REMOTE_PUBLISH_DISABLED' };
+    }
+    try {
+      const outcome = await this.transport.reconcile(safeRef, signal);
+      return { status: outcome.status, providerRef: safeRef, url: outcome.url, reasonCode: outcome.reasonCode ?? 'RECONCILED' };
+    } catch {
+      return { status: 'unknown', providerRef: safeRef, reasonCode: 'RECONCILIATION_FAILED' };
+    }
+  }
+
+  async cancel(providerRef: string, signal: AbortSignal = new AbortController().signal): Promise<CancelOutcome> {
+    const safeRef = text(providerRef, 'Provider reference', 200);
+    if (!this.transport || this.transport.zeroNewSpend !== true) {
+      return { providerRef: safeRef, status: 'unknown', evidenceIds: [] };
+    }
+    return this.transport.cancel(safeRef, signal);
   }
 }
 

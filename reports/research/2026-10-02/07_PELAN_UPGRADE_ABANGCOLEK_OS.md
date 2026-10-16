@@ -1,3 +1,6 @@
+<!-- ABANGCOLEK_DOC_AUTHORITY_V1 -->
+> **RESEARCH_REFERENCE — context diselaraskan 3 Oktober 2026.** Kandungan/metadata asal di bawah ialah bukti atau cadangan pada tarikh asal, bukan current runtime/authorization/release proof. Gunakan [Source of Truth](../../../docs/ABANGCOLEK-SOURCE-OF-TRUTH.md) dan [handover A–Z](../../../docs/handover/AGENT-HANDOVER-A-Z.md) untuk keputusan semasa. Server3000/3010 STOPPED pada snapshot20:25MYT; data kekal OS; Emons goal PAUSED. Native provider/benchmark/cost/complete claims perlu verifikasi sendiri.
+
 # Pelan Upgrade ABANGCOLEK-OS
 
 Tarikh: 2 Oktober 2026. Status: cadangan, belum diimplementasikan. Asas: lima kajian rasmi, sintesis JEV dan semakan semula source `jevEngine.ts` serta package projek.

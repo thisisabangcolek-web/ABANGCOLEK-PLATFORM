@@ -1,5 +1,28 @@
 import { describe, expect, test } from 'bun:test';
-import { canOpenWorkspace, getNavigation, resolveRoute } from '../../src/features/platform/routes';
+import { canOpenWorkspace, getNavigation, getNavigationGroups as groupsFor, resolveRoute } from '../../src/features/platform/routes';
+
+describe('grouped workspace navigation', () => {
+  test('Founder can find all twenty destinations once across the seven work areas', () => {
+    const groups = groupsFor('founder');
+    expect(groups.map(group => group.label)).toEqual(['Hari ini', 'Jualan & rangkaian', 'Operasi & kewangan', 'Pelanggan & kualiti', 'Pertumbuhan', 'Ilmu & laporan', 'Pentadbiran']);
+    const items = groups.flatMap(group => group.items);
+    expect(items.map(item => item.id).sort()).toEqual(['overview', 'orders', 'inventory', 'cases', 'jev', 'dealers', 'marketing', 'automations', 'plugins', 'tasks', 'documents', 'knowledge', 'calendar', 'finance', 'qc', 'shifts', 'reports', 'people', 'settings', 'legacy'].sort());
+    expect(new Set(items.map(item => item.path)).size).toBe(20);
+    expect(new Set(groups.map(group => group.id)).size).toBe(7);
+    expect(groups.every(group => group.items.length > 0)).toBe(true);
+  });
+
+  for (const role of ['founder', 'customer', 'staff', 'developer'] as const) {
+    test(`${role} grouping preserves every existing URL, label and workspace capability`, () => {
+      const grouped = groupsFor(role).flatMap(group => group.items);
+      expect(grouped.length).toBe(getNavigation(role).length);
+      expect(new Set(grouped.map(item => item.id)).size).toBe(grouped.length);
+      expect([...grouped].sort((a, b) => a.id.localeCompare(b.id))).toEqual(getNavigation(role).sort((a, b) => a.id.localeCompare(b.id)));
+      expect(grouped.every(item => item.path.startsWith(`/${role}/`) && typeof item.requiredCapability === 'string' && item.requiredCapability.length > 0)).toBe(true);
+    });
+  }
+});
+
 
 describe('workspace URL boundaries', () => {
   test('public content and authenticated flow URLs resolve independently', () => {

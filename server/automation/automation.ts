@@ -1,11 +1,11 @@
 import type { AutomationCapability, PreparedPostizExport, ResearchSessionGrant, ResearchSourceRecord, SavedResearchBrief } from '../../shared/automation-contracts';
-import type { ResearchRequest } from '../../shared/platform-contracts';
+import type { CancelOutcome, PublishIntent, PublishOutcome, ResearchRequest } from '../../shared/platform-contracts';
 import { Auth, hash, type Principal } from '../platform/auth';
 import { Commerce } from '../platform/commerce';
 import { Marketing } from '../platform/marketing';
 import { Work } from '../platform/work';
 import { date, fail, fields, id, integer, list, now, object, oneOf, PlatformStore, strings, text } from '../platform/store';
-import { boundedTimeout, type AutomationOptions, type ResearchCollection } from './adapters';
+import { boundedTimeout, PostizPublisherAdapter, type AutomationOptions, type ResearchCollection } from './adapters';
 import { admitWork } from './jobs';
 import { publicSourceUrl } from './sourcePolicy';
 
@@ -19,7 +19,9 @@ export class Automation {
       capability('manual', true, ['source_capture', 'research_brief', 'approved_export'], 'LOCAL_AUTHORITATIVE'),
       capability('hermes', this.options.hermes?.zeroNewSpend === true, [], this.options.hermes ? 'HERMES_HOST_VERIFICATION_REQUIRED' : 'HERMES_UNAVAILABLE'),
       capability('agent_reach', this.options.agentReach?.zeroNewSpend === true, [], this.options.agentReach ? 'SCOPED_GRANT_AND_USAGE_REQUIRED' : 'AGENT_REACH_UNAVAILABLE'),
-      { ...capability('postiz', false, [], 'REMOTE_PUBLISH_DISABLED'), status: 'disabled' },
+      this.options.postiz?.zeroNewSpend === true
+        ? capability('postiz', true, ['publish_pilot', 'reconcile', 'cancel'], 'POSTIZ_PILOT_ACTIVE')
+        : { ...capability('postiz', false, [], 'REMOTE_PUBLISH_DISABLED'), status: 'disabled' },
     ];
   }
 
@@ -192,5 +194,85 @@ export class Automation {
       this.store.save('postiz_prepared_exports', artifact); this.store.audit(actor.user.id, 'postiz.prepare.export', artifact.id, campaign.revision);
       return artifact;
     });
+  }
+
+  async publishPostiz(actor: Principal, campaignId: string, raw: unknown, key: unknown): Promise<PublishOutcome> {
+    this.auth.founder(actor);
+    const input = object(raw);
+    fields(input, ['expectedRevision', 'channel', 'accountId']);
+    const campaign = this.marketing.get(actor, campaignId);
+
+    if (!['approved', 'planned'].includes(campaign.status) || !campaign.approvalExpiresAt || campaign.approvalExpiresAt <= now()) {
+      fail('APPROVAL_REQUIRED', 409, 'Kempen belum diluluskan atau kelulusan telah luput.');
+    }
+    if (campaign.catalogueVersion !== this.commerce.version()) {
+      fail('APPROVAL_STALE', 409, 'Katalog telah berubah sejak kelulusan kempen.');
+    }
+    this.store.revision(campaign.revision, input.expectedRevision);
+    if (campaign.scheduledAt && campaign.scheduledAt > campaign.approvalExpiresAt) {
+      fail('APPROVAL_EXPIRES_BEFORE_SCHEDULE', 409);
+    }
+
+    const channel = text(input.channel, 'Intended channel', 120);
+    const safeKey = text(key, 'Idempotency key', 120, 8);
+    const intentId = hash(`${campaign.id}:${campaign.revision}:${channel}:${safeKey}`);
+
+    const existing = this.store.get<PublishOutcome & { campaignId: string }>('postiz_publish_intents', intentId);
+    if (existing) {
+      if (existing.status === 'unknown') {
+        fail('RECONCILIATION_REQUIRED', 409, 'Penerbitan terdahulu tidak diketahui statusnya. Lakukan penyesuaian (reconcile) sebelum cuba semula.');
+      }
+      return existing;
+    }
+
+    const intent: PublishIntent = {
+      id: intentId,
+      campaignId: campaign.id,
+      assetVersion: campaign.revision,
+      channel,
+      ...(input.accountId ? { accountId: text(input.accountId, 'Intended account', 120) } : {}),
+      ...(campaign.scheduledAt ? { scheduledAt: campaign.scheduledAt } : {}),
+      approvalId: campaign.approvedBy ?? actor.user.id,
+      approvalExpiresAt: campaign.approvalExpiresAt,
+      grantVersion: 1,
+      idempotencyKey: safeKey,
+    };
+
+    const publisher = new PostizPublisherAdapter(this.options.postiz, this.options.timeoutMs);
+    const controller = new AbortController();
+    const outcome = await publisher.publish(intent, controller.signal);
+
+    const record = { id: intentId, ...outcome, campaignId: campaign.id, channel, createdAt: now() };
+    this.store.save('postiz_publish_intents', record);
+    this.store.audit(actor.user.id, 'postiz.publish', intentId, 1);
+
+    return outcome;
+  }
+
+  async reconcilePostiz(actor: Principal, raw: unknown): Promise<{ status: string; providerRef?: string; reasonCode: string }> {
+    this.auth.founder(actor);
+    const input = object(raw);
+    fields(input, ['providerRef', 'intentId']);
+    const intentId = text(input.intentId, 'Intent ID', 120);
+    const existing = this.store.require<PublishOutcome & { id: string; campaignId: string }>('postiz_publish_intents', intentId);
+
+    const publisher = new PostizPublisherAdapter(this.options.postiz, this.options.timeoutMs);
+    const reconciled = await publisher.reconcile(text(input.providerRef, 'Provider reference', 200), new AbortController().signal);
+
+    const updated = { ...existing, id: intentId, status: reconciled.status as PublishOutcome['status'], reasonCode: reconciled.reasonCode };
+    this.store.save('postiz_publish_intents', updated);
+    this.store.audit(actor.user.id, 'postiz.reconcile', intentId, 1);
+    return updated;
+  }
+
+  async cancelPostiz(actor: Principal, raw: unknown): Promise<CancelOutcome> {
+    this.auth.founder(actor);
+    const input = object(raw);
+    fields(input, ['providerRef']);
+    const providerRef = text(input.providerRef, 'Provider reference', 200);
+    const publisher = new PostizPublisherAdapter(this.options.postiz, this.options.timeoutMs);
+    const outcome = await publisher.cancel(providerRef, new AbortController().signal);
+    this.store.audit(actor.user.id, 'postiz.cancel', providerRef, 1);
+    return outcome;
   }
 }

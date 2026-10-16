@@ -78,7 +78,8 @@ import {
   WocsParsedCommand,
   WocsExecutionResult,
   PitchDeckSlide
-} from '@/services/abangColekRepoData';
+} from '@/services/abangcolekRepoData';
+import { SOCIAL_ACCOUNTS, OBSERVED_PRODUCT_SIGNALS, OBSERVED_CONTENT_PILLARS } from '@/data/abangcolekSocialSourceOfTruth';
 
 interface AbangColekDiscoveryViewProps {
   onAction?: (msg?: string) => void;
@@ -107,7 +108,7 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
   // History of real JEV evaluations
   const [history, setHistory] = useState<JevClassificationResult[]>([]);
 
-  // Audio Player State for Official "Kasi Lagi-Lagi" Jingle
+  // Audio player state retained for compatibility; asset is quarantined until rights evidence exists.
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlayingJingle, setIsPlayingJingle] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
@@ -136,18 +137,18 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('cs-welcome');
   const [templateCategory, setTemplateCategory] = useState<string>('all');
   const [variableValues, setVariableValues] = useState<Record<string, string>>({
-    customer_name: "Ahmad bin Ali",
-    order_details: "3x Sambal Colek Original 500ml",
-    total: "84.00",
-    current_events: "1. Makan Fest KL Gateway (3-5 Okt)\n2. Karnival Karat JB (10-12 Okt)",
-    form_link: "https://forms.gle/abangcolekluckydraw2026",
-    end_date: "31 Disember 2026",
-    event_name: "Makan Fest KL Gateway",
-    event_date: "3-5 Oktober 2026",
-    event_location: "Ruang Legar Utama, KL Gateway Mall",
-    event_time: "10:00 AM - 10:00 PM",
-    customer_number: "+6012-3456789",
-    customer_message: "Boleh pos 10 botol ke Kuantan?",
+      customer_name: "[UNKNOWN — isi selepas record customer disahkan]",
+      order_details: "[UNKNOWN — pilih daripada order record sebenar]",
+      total: "[UNKNOWN — jangan kira daripada template]",
+      current_events: "[UNKNOWN — tiada event semasa daripada snapshot sosial]",
+      form_link: "[PENDING_APPROVAL]",
+      end_date: "[PENDING_APPROVAL]",
+      event_name: "[UNKNOWN — semak event record]",
+      event_date: "[UNKNOWN — semak event record]",
+      event_location: "[UNKNOWN — semak event record]",
+      event_time: "[UNKNOWN — semak event record]",
+      customer_number: "[REDACTED]",
+      customer_message: "[UNKNOWN — tiada customer message dalam social evidence]",
     timestamp: new Date().toLocaleTimeString('ms-MY')
   });
   const [copiedTemplate, setCopiedTemplate] = useState(false);
@@ -268,7 +269,7 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
               rel="noreferrer"
               className="px-4 py-2.5 rounded-full bg-[var(--ui-soft)] [@media(hover:hover)_and_(pointer:fine)]:hover:brightness-95 text-[var(--ui-text)] text-xs font-semibold flex items-center gap-2 border border-[var(--ui-border)] transition-all"
             >
-              <span>Repo Rasmi</span>
+              <span>Repo Project</span>
               <ExternalLink size={13} />
             </a>
             <button
@@ -290,14 +291,14 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
             { id: 'overview', label: 'Ringkasan & Metrik Forensik', icon: ShieldCheck },
             { id: 'pitch_deck', label: 'Pitch Deck Pelabur', icon: BookOpen, badge: '15 Slaid' },
             { id: 'wocs_audit', label: 'Audit JEV & WOCS Engine', icon: Terminal, badge: 'GitHub Review' },
-            { id: 'tiktok_hooks', label: 'Bank Cangkuk TikTok', icon: TrendingUp, badge: `${TIKTOK_VIRAL_HOOKS.length} Hooks` },
+            { id: 'tiktok_hooks', label: 'Audit Cangkuk TikTok', icon: TrendingUp, badge: `${TIKTOK_VIRAL_HOOKS.length} Disahkan` },
             { id: 'whatsapp_templates', label: 'Templat WhatsApp WOCS', icon: MessageSquare, badge: `${WHATSAPP_TEMPLATES.length} Templat` },
             { id: 'booth_ops', label: 'SOP Operasi Booth', icon: CheckSquare, badge: '3 Fasa' },
-            { id: 'audit_report', label: 'Dokumen Forensik Repo', icon: FileText, badge: '.md Rasmi' },
+            { id: 'audit_report', label: 'Dokumen Forensik Repo', icon: FileText, badge: '.md evidence' },
             { id: 'questions', label: '8 Soalan Asas Operasi', icon: HelpCircle, badge: `${workflows.filter(w => w.owner_signoff).length}/8` },
             { id: 'jev_tester', label: 'Simulator JEV System-1', icon: Activity, badge: 'Live AI' },
             { id: 'history', label: 'Sejarah Audit JEV', icon: Clock, badge: history.length > 0 ? `${history.length}` : undefined },
-            { id: 'channels', label: 'Saluran Media Sosial Disahkan', icon: Layers },
+            { id: 'channels', label: 'Social Evidence', icon: Layers },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -328,39 +329,24 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 rounded-2xl bg-[var(--ui-soft)] border border-[var(--ui-border)] flex flex-col justify-between">
-                <span className="text-[11px] font-bold text-[var(--ui-muted)] uppercase tracking-wider">Tangkapan Bukti</span>
-                <div className="mt-2 flex items-baseline gap-1.5">
-                  <span className="text-2xl font-extrabold text-[var(--ui-text)]">167</span>
-                  <span className="text-[10px] text-[var(--ui-success-text)] font-bold">100% SHA-256</span>
-                </div>
-                <span className="text-[10px] text-[var(--ui-muted)] mt-1">128 Rekod Unik Ternormal</span>
+                <span className="text-[11px] font-bold text-[var(--ui-muted)] uppercase tracking-wider">Akaun Sosial</span>
+                <div className="mt-2 flex items-baseline gap-1.5"><span className="text-2xl font-extrabold text-[var(--ui-text)]">{SOCIAL_ACCOUNTS.length}</span><span className="text-[10px] text-[var(--ui-success-text)] font-bold">OBSERVED</span></div>
+                <span className="text-[10px] text-[var(--ui-muted)] mt-1">Snapshot {SOCIAL_ACCOUNTS[0].snapshotDate}</span>
               </div>
-
               <div className="p-4 rounded-2xl bg-[var(--ui-soft)] border border-[var(--ui-border)] flex flex-col justify-between">
-                <span className="text-[11px] font-bold text-[var(--ui-muted)] uppercase tracking-wider">Keputusan JEV</span>
-                <div className="mt-2 flex items-baseline gap-1.5">
-                  <span className="text-2xl font-extrabold text-[var(--ui-text)]">389+</span>
-                  <span className="text-[10px] text-[var(--ui-success-text)] font-bold">Live AI</span>
-                </div>
-                <span className="text-[10px] text-[var(--ui-muted)] mt-1">Single forward-pass &lt;50ms</span>
+                <span className="text-[11px] font-bold text-[var(--ui-muted)] uppercase tracking-wider">Signal Produk</span>
+                <div className="mt-2 flex items-baseline gap-1.5"><span className="text-2xl font-extrabold text-[var(--ui-text)]">{OBSERVED_PRODUCT_SIGNALS.length}</span><span className="text-[10px] text-[var(--ui-warning-text)] font-bold">MAPPING NEEDED</span></div>
+                <span className="text-[10px] text-[var(--ui-muted)] mt-1">Bukan katalog SKU/harga</span>
               </div>
-
               <div className="p-4 rounded-2xl bg-[var(--ui-soft)] border border-[var(--ui-border)] flex flex-col justify-between">
-                <span className="text-[11px] font-bold text-[var(--ui-muted)] uppercase tracking-wider">Kandungan Media BI</span>
-                <div className="mt-2 flex items-baseline gap-1.5">
-                  <span className="text-2xl font-extrabold text-[var(--ui-text)]">123</span>
-                  <span className="text-[10px] text-[var(--ui-muted)] font-medium">79 video / 44 pos</span>
-                </div>
-                <span className="text-[10px] text-[var(--ui-muted)] mt-1">TikTok & Instagram rasmi</span>
+                <span className="text-[11px] font-bold text-[var(--ui-muted)] uppercase tracking-wider">Content Pillars</span>
+                <div className="mt-2 flex items-baseline gap-1.5"><span className="text-2xl font-extrabold text-[var(--ui-text)]">{OBSERVED_CONTENT_PILLARS.length}</span><span className="text-[10px] text-[var(--ui-success-text)] font-bold">OBSERVED</span></div>
+                <span className="text-[10px] text-[var(--ui-muted)] mt-1">Daripada profil founder</span>
               </div>
-
               <div className="p-4 rounded-2xl bg-[var(--ui-soft)] border border-[var(--ui-border)] flex flex-col justify-between">
-                <span className="text-[11px] font-bold text-[var(--ui-muted)] uppercase tracking-wider">Graf Pengetahuan</span>
-                <div className="mt-2 flex items-baseline gap-1.5">
-                  <span className="text-2xl font-extrabold text-[var(--ui-text)]">131</span>
-                  <span className="text-[10px] text-[var(--ui-accent-text)] font-bold">128 Relasi</span>
-                </div>
-                <span className="text-[10px] text-[var(--ui-muted)] mt-1">124 Peristiwa garis masa</span>
+                <span className="text-[11px] font-bold text-[var(--ui-muted)] uppercase tracking-wider">Data Operasi</span>
+                <div className="mt-2 flex items-baseline gap-1.5"><span className="text-2xl font-extrabold text-[var(--ui-text)]">0</span><span className="text-[10px] text-[var(--ui-warning-text)] font-bold">NOT FROM SOCIAL</span></div>
+                <span className="text-[10px] text-[var(--ui-muted)] mt-1">Harga, stok &amp; order kekal unknown</span>
               </div>
             </div>
 
@@ -373,30 +359,30 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
                     Profil Jenama & Hubungan Entiti Sebenar
                   </h3>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                    Disahkan Penuh
+                    Social snapshot — evidence scoped
                   </span>
                 </div>
                 <p className="text-xs text-[var(--ui-muted)] leading-relaxed font-medium">
-                  Berdasarkan audit repositori, teras perniagaan berpusat kepada 
-                  <strong> ABANGCOLEK</strong> (produk kuah colek buah 500g, pencicah pedas manis, jeruk mangga asam boi) serta pasukan operasi 
-                  <strong> STYLOAIRPOOL</strong> yang mengendalikan gerai pop-up bergerak di Toppen Johor Bahru, Pasar Karat, Shah Alam, dan Bangi.
+                  Berdasarkan snapshot sosial founder, kandungan yang kelihatan menunjukkan 
+                  <strong> ABANG COLEK</strong> muncul bersama produk colek/jeruk, reaksi pelanggan, event dan kandungan founder. Ownership, SKU, harga dan stok tidak dipastikan daripada sosial. 
+                  <strong> @styloairpool</strong> berfungsi sebagai identity/founder content signal. Lokasi, operasi dan authority memerlukan rekod dalaman berasingan.
                 </p>
                 <div className="p-3.5 rounded-2xl bg-[var(--ui-soft)] border border-[var(--ui-border)] space-y-2">
                   <div className="flex items-center justify-between text-xs font-semibold">
                     <span className="text-[var(--ui-text)]">ABANGCOLEK & STYLOAIRPOOL:</span>
-                    <span className="text-[var(--ui-success-text)] font-bold">Jenama & Pengendali Rasmi</span>
+                    <span className="text-[var(--ui-success-text)] font-bold">Founder/social signal — mapping pending</span>
                   </div>
                   <div className="flex items-center justify-between text-xs font-semibold">
                     <span className="text-[var(--ui-text)]">LIURLELEH (Liur Leleh House):</span>
-                    <span className="text-[var(--ui-warning-text)] font-bold">Produk Rakan Niaga</span>
+                    <span className="text-[var(--ui-warning-text)] font-bold">Related entity — observed</span>
                   </div>
                   <div className="flex items-center justify-between text-xs font-semibold">
                     <span className="text-[var(--ui-text)]">JERUX (The Famous Jerux):</span>
-                    <span className="text-[var(--ui-warning-text)] font-bold">Produk Jeruk Buah</span>
+                    <span className="text-[var(--ui-warning-text)] font-bold">Related entity — observed</span>
                   </div>
                   <div className="flex items-center justify-between text-xs font-semibold">
                     <span className="text-[var(--ui-text)]">Stokis Terengganu (@jeruxsliurlelehterengganu):</span>
-                    <span className="text-[var(--ui-accent-text)] font-bold">Ejen Wilayah Pantai Timur</span>
+                    <span className="text-[var(--ui-accent-text)] font-bold">Unverified — removed from canonical social evidence</span>
                   </div>
                 </div>
               </div>
@@ -408,16 +394,16 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
                     Tadbir Urus & Invarian Root Cause
                   </h3>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                    Tiada Halusinasi
+                    Evidence guardrails active
                   </span>
                 </div>
                 <p className="text-xs text-[var(--ui-muted)] leading-relaxed font-medium">
-                  Sistem mengekalkan piawaian etika data tanpa sebarang mock data:
+                  Sistem kini membezakan social observation daripada data operasi; legacy mock/claim telah dikarantin:
                 </p>
                 <div className="space-y-2.5">
                   <div className="p-3 rounded-2xl bg-[var(--ui-soft)] border border-[var(--ui-border)] text-xs text-[var(--ui-text)]">
                     <span className="font-bold text-[var(--ui-danger-text)] block mb-1">Aduan Kebocoran (LEAKAGE / SEAL_FAILURE):</span>
-                    Aduan penutup botol kuah colek bocor semasa pos kurier dilabelkan sebagai <code>LEAKAGE</code>. Punca operasi wajib kekal <strong><code>UNDETERMINED</code></strong> sehingga semakan lot pengeluaran pembekal atau syarikat kurier diverifikasi.
+                    Tiada aduan leakage diambil sebagai fakta daripada snapshot sosial. Sebarang case perlu datang daripada record customer/order sebenar dan kekal <strong><code>UNKNOWN</code></strong> sehingga evidence diterima.
                   </div>
                   <div className="p-3 rounded-2xl bg-[var(--ui-soft)] border border-[var(--ui-border)] text-xs text-[var(--ui-text)]">
                     <span className="font-bold text-[var(--ui-accent-text)] block mb-1">Pintu Kelulusan PRD (Gated Workflows):</span>
@@ -437,12 +423,12 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
                       <Music size={18} />
                     </span>
                     <div>
-                      <h3 className="font-bold text-sm text-[var(--ui-text)]">Lagu Tema Rasmi: &quot;Kasi Lagi-Lagi&quot;</h3>
-                      <p className="text-[11px] text-[var(--ui-muted)]">Hip-Hop / Trap Anthem (85-95 BPM) · Abang Colek</p>
+                      <h3 className="font-bold text-sm text-[var(--ui-text)]">Audio claim — belum disahkan</h3>
+                      <p className="text-[11px] text-[var(--ui-muted)]">Aset audio tidak dianggap official tanpa source dan rights evidence</p>
                     </div>
                   </div>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--ui-accent)] text-[var(--ui-accent-ink)] border border-[var(--ui-border)]">
-                    Audio Master 320kbps
+                    PENDING_APPROVAL
                   </span>
                 </div>
 
@@ -456,7 +442,7 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
 
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center justify-between text-xs font-semibold">
-                      <span className="text-[var(--ui-muted)]">Kasi Lagi-Lagi (Theme Song)</span>
+                      <span className="text-[var(--ui-muted)]">Audio quarantined</span>
                       <span className="text-[var(--ui-muted)] font-mono text-[11px]">01:00</span>
                     </div>
                     {/* Equalizer animation */}
@@ -481,7 +467,7 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
 
                 <audio
                   ref={audioRef}
-                  src="/audio/kasi-lagi-lagi.mp3"
+                  src=""
                   onEnded={() => setIsPlayingJingle(false)}
                   className="hidden"
                 />
@@ -491,7 +477,7 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
                     onClick={() => setShowLyrics(!showLyrics)}
                     className="text-xs font-semibold text-[var(--ui-danger-text)] hover:text-[var(--ui-danger-text)] flex items-center gap-1"
                   >
-                    <span>{showLyrics ? 'Sembunyi Lirik' : 'Lihat Lirik Penuh (Karaoke)'}</span>
+                    <span>{showLyrics ? 'Sembunyi Lirik' : 'Lyrics unavailable — pending rights'}</span>
                     <ChevronRight size={13} className={cn("transition-transform", showLyrics && "rotate-90")} />
                   </button>
                   <span className="text-[10px] text-[var(--ui-muted)] italic">Disahkan daripada repo thisisniagahub</span>
@@ -529,33 +515,33 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
                       <Flame size={18} className="text-[var(--ui-danger-text)]" />
                     </span>
                     <div>
-                      <h3 className="font-bold text-sm text-[var(--ui-text)]">Profil TikTok Rasmi: @styloairpool</h3>
-                      <p className="text-[11px] text-[var(--ui-muted)]">Pengasas: Epull · Founder | Motivator 📈</p>
+                      <h3 className="font-bold text-sm text-[var(--ui-text)]">Profil TikTok founder: @styloairpool</h3>
+                      <p className="text-[11px] text-[var(--ui-muted)]">Display name: ABANG COLEK 🥭 · Bio: Founder | Motivator</p>
                     </div>
                   </div>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                    75.2K Followers
+                    76.7K followers · snapshot 15 Okt 2026
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div className="p-3 rounded-2xl bg-[var(--ui-soft)] border border-[var(--ui-border)]">
                     <p className="text-[10px] font-bold uppercase text-[var(--ui-muted)]">Jumlah Tontonan & Likes</p>
-                    <p className="text-base font-black text-[var(--ui-text)] mt-0.5">793.2K Likes</p>
-                    <p className="text-[10px] text-[var(--ui-success-text)] mt-0.5">10.5 likes per follower</p>
+                    <p className="text-base font-black text-[var(--ui-text)] mt-0.5">827.4K Likes</p>
+                    <p className="text-[10px] text-[var(--ui-success-text)] mt-0.5">Snapshot · bukan historical analytics</p>
                   </div>
 
                   <div className="p-3 rounded-2xl bg-[var(--ui-soft)] border border-[var(--ui-border)]">
                     <p className="text-[10px] font-bold uppercase text-[var(--ui-muted)]">Kandungan Disahkan</p>
-                    <p className="text-base font-black text-[var(--ui-text)] mt-0.5">79 Video Koleksi</p>
-                    <p className="text-[10px] text-[var(--ui-muted)] mt-0.5">Festival & booth viral</p>
+                    <p className="text-base font-black text-[var(--ui-text)] mt-0.5">Content pillars observed</p>
+                    <p className="text-[10px] text-[var(--ui-muted)] mt-0.5">Rasa · reaction · humor · founder · event</p>
                   </div>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-[var(--ui-accent)] [&_*]:text-[var(--ui-accent-ink)] border border-[var(--ui-border)] space-y-1.5 text-xs">
                   <p className="font-bold text-[var(--ui-accent-text)] flex items-center gap-1.5">
                     <span>🌶️🥭</span>
-                    <span>Slogan Rasmi TikTok:</span>
+                    <span>Phrase observed on TikTok:</span>
                   </p>
                   <p className="text-sm font-extrabold text-[var(--ui-accent-text)] italic">
                     &quot;PEDAS MANIS LIKAT MELEKAT 🌶️🥭&quot;
@@ -594,7 +580,7 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
                         {MOTIVATIONAL_QUOTES[quoteIndex].category.toUpperCase()}
                       </span>
                     </h4>
-                    <p className="text-xs text-[var(--ui-muted)]">Mutiara kata pengasas dari preset-data.ts (8 Koleksi Rasmi)</p>
+                    <p className="text-xs text-[var(--ui-muted)]">Snapshot sosial sahaja — quote post-level perlu approval founder</p>
                   </div>
                 </div>
 
@@ -678,7 +664,7 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
           </div>
         )}
 
-        {/* SUBTAB: PITCH DECK 15-SLIDE (FROM abang-colek-brand-os PRESET) */}
+        {/* SUBTAB: SOCIAL-EVIDENCE PITCH OUTLINE */}
         {activeSubTab === 'pitch_deck' && (
           <div className="space-y-6">
             <div className="p-6 rounded-3xl bg-[var(--ui-surface)] text-[var(--ui-text)] border border-[var(--ui-border)] shadow-lg space-y-4">
@@ -689,11 +675,11 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
                       <BookOpen size={18} />
                     </span>
                     <h3 className="font-bold text-base text-[var(--ui-text)]">
-                      Pitch Deck Pelabur & Jenama Rasmi (15 Slaid Lengkap)
+                      Social-Evidence Pitch Outline (8 Slaid)
                     </h3>
                   </div>
                   <p className="text-xs text-[var(--ui-muted)] mt-1">
-                    Disintesis terus daripada kod asal <code className="text-[var(--ui-success-text)] font-mono">abang-colek-brand-os/src/preset.ts</code> (Founder: Megat Shaifulreza).
+                    Disintesis daripada snapshot sosial founder; bukan traction proof atau dokumen pelabur yang diluluskan.
                   </p>
                 </div>
 
@@ -805,7 +791,7 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
               })()}
             </div>
 
-            {/* Official Brand Manifestos */}
+            {/* Working Principles from Social Evidence */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {BRAND_MANIFESTOS.map((m) => (
                 <div key={m.id} className="p-6 rounded-3xl bg-[var(--ui-surface)] border border-[var(--ui-border)] shadow-xs space-y-3">
@@ -815,7 +801,7 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
                       {m.title}
                     </span>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--ui-accent)] text-[var(--ui-accent-ink)]">
-                      Rasmi Liurleleh House
+                      Working principle · approval pending
                     </span>
                   </div>
                   <p className="text-xs text-[var(--ui-text)] leading-relaxed font-medium whitespace-pre-line italic">
@@ -894,8 +880,8 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
                     <Calendar size={16} className="text-[var(--ui-danger-text)]" />
                     Jadual Siaran Mingguan (4-5 Video/Minggu)
                   </h4>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--ui-accent)] text-[var(--ui-accent-ink)]">
-                    SOP Rasmi
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--ui-accent)] text-[var(--ui-accent-ink)]">
+                    Draft daripada pemerhatian sosial
                   </span>
                 </div>
                 <div className="space-y-2.5">
@@ -939,14 +925,14 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
               <div className="flex items-center justify-between pb-3 border-b border-[var(--ui-border)]">
                 <div>
                   <h4 className="font-bold text-sm text-[var(--ui-text)]">
-                    Bank 10 Cangkuk Terbukti Viral (Empirical Hooks Bank)
+                    Bank Cangkuk TikTok — belum diaudit per-video
                   </h4>
                   <p className="text-xs text-[var(--ui-muted)] mt-0.5">
-                    Data tontonan dan kadar penglibatan sebenar yang diekstrak daripada akaun @styloairpool.
+                    Tiada hook per-video yang dipautkan kepada URL dan metrik sah dalam dataset canonical.
                   </p>
                 </div>
                 <span className="text-xs font-bold text-[var(--ui-accent-ink)] bg-[var(--ui-accent)] px-2.5 py-1 rounded-full border border-[var(--ui-border)]">
-                  {TIKTOK_VIRAL_HOOKS.length} Cangkuk Aktif
+                    {TIKTOK_VIRAL_HOOKS.length} Disahkan
                 </span>
               </div>
 
@@ -1000,10 +986,10 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
                 <div>
                   <h4 className="font-bold text-sm text-[var(--ui-text)] flex items-center gap-2">
                     <MessageSquare size={16} className="text-[var(--ui-success-text)]" />
-                    Pustaka 12 Templat Mesej WhatsApp WOCS
+                    Templat WhatsApp WOCS — quarantined until approved
                   </h4>
                   <p className="text-xs text-[var(--ui-muted)] mt-0.5">
-                    Mesej rasmi yang dipautkan ke Chrome Extension WOCS dan Webhook Meta Cloud API.
+                    Tiada mesej rasmi dipaparkan sehingga source, terms, payment dan destination disahkan.
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -1050,7 +1036,12 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
                 </div>
 
                 {/* Template Preview and Interpolator */}
-                {(() => {
+                {WHATSAPP_TEMPLATES.length === 0 ? (
+                  <div className="lg:col-span-2 p-6 rounded-3xl bg-amber-500/10 border border-amber-500/30 text-sm text-[var(--ui-text)]">
+                    <strong>Templat WhatsApp dikarantin.</strong>
+                    <p className="mt-2 text-xs text-[var(--ui-muted)]">Harga, promosi, lokasi, bank details dan API delivery tidak disahkan melalui sosial founder. Tambah template hanya selepas founder meluluskan source, terms dan destination.</p>
+                  </div>
+                ) : (() => {
                   const activeT = WHATSAPP_TEMPLATES.find(t => t.id === selectedTemplateId) || WHATSAPP_TEMPLATES[0];
                   let interpolatedMessage = activeT.message;
                   Object.entries(variableValues).forEach(([k, v]) => {
@@ -1244,69 +1235,59 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
               {/* Forensic Metric Badges */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                 <div className="p-3.5 rounded-2xl bg-[var(--ui-soft)] border border-[var(--ui-border)]">
-                  <span className="text-[10px] uppercase font-bold text-[var(--ui-muted)]">Modul Utama Disemak</span>
-                  <div className="text-lg font-black text-[var(--ui-text)] mt-0.5">4 Sub-Projek</div>
-                  <span className="text-[10px] text-[var(--ui-muted)]">Brand OS, WOCS, Mobile, Server</span>
+                  <span className="text-[10px] uppercase font-bold text-[var(--ui-muted)]">Akaun sosial</span>
+                  <div className="text-lg font-black text-[var(--ui-text)] mt-0.5">5 snapshot</div>
+                  <span className="text-[10px] text-[var(--ui-muted)]">TikTok, Instagram, Facebook &amp; Threads</span>
                 </div>
                 <div className="p-3.5 rounded-2xl bg-[var(--ui-soft)] border border-[var(--ui-border)]">
-                  <span className="text-[10px] uppercase font-bold text-[var(--ui-muted)]">Slaid Pitch Deck</span>
-                  <div className="text-lg font-black text-[var(--ui-text)] mt-0.5">15 Slaid Lengkap</div>
-                  <span className="text-[10px] text-[var(--ui-success-text)] font-bold">Founder Megat Shaifulreza</span>
+                  <span className="text-[10px] uppercase font-bold text-[var(--ui-muted)]">Social evidence</span>
+                  <div className="text-lg font-black text-[var(--ui-text)] mt-0.5">6 pillars</div>
+                  <span className="text-[10px] text-[var(--ui-success-text)] font-bold">Observed 15 Okt 2026</span>
                 </div>
                 <div className="p-3.5 rounded-2xl bg-[var(--ui-soft)] border border-[var(--ui-border)]">
-                  <span className="text-[10px] uppercase font-bold text-[var(--ui-muted)]">Templat WhatsApp WOCS</span>
-                  <div className="text-lg font-black text-[var(--ui-text)] mt-0.5">12 Mesej Rasmi</div>
-                  <span className="text-[10px] text-[var(--ui-text)] font-bold">14 Tangkap Layar WAWCD</span>
+                  <span className="text-[10px] uppercase font-bold text-[var(--ui-muted)]">Commercial data</span>
+                  <div className="text-lg font-black text-[var(--ui-text)] mt-0.5">0 daripada sosial</div>
+                  <span className="text-[10px] text-[var(--ui-warning-text)] font-bold">Harga, stok &amp; payment unknown</span>
                 </div>
                 <div className="p-3.5 rounded-2xl bg-[var(--ui-soft)] border border-[var(--ui-border)]">
-                  <span className="text-[10px] uppercase font-bold text-[var(--ui-muted)]">Bank Cangkuk TikTok</span>
-                  <div className="text-lg font-black text-[var(--ui-text)] mt-0.5">10 Viral Hooks</div>
-                  <span className="text-[10px] text-[var(--ui-danger-text)] font-bold">793.2K Likes @styloairpool</span>
+                  <span className="text-[10px] uppercase font-bold text-[var(--ui-muted)]">Hook audit</span>
+                  <div className="text-lg font-black text-[var(--ui-text)] mt-0.5">0 disahkan</div>
+                  <span className="text-[10px] text-[var(--ui-danger-text)] font-bold">Per-video URL/metrics belum dipautkan</span>
                 </div>
               </div>
 
               {/* Markdown Document Content Display */}
               <div className="p-6 rounded-2xl bg-[var(--ui-soft)] border border-[var(--ui-border)] space-y-4 max-h-[600px] overflow-y-auto text-xs text-[var(--ui-text)] leading-relaxed font-sans">
                 <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-                  <p className="font-bold">✓ Status Audit Selesai & Disahkan:</p>
+                  <p className="font-bold">✓ Social evidence dipisahkan:</p>
                   <p className="mt-0.5">
-                    Seluruh fail dalam <code className="font-mono bg-[var(--ui-surface)] px-1.5 py-0.5 rounded">https://github.com/thisisniagahub/ABANG-COLEK.git</code> telah dibaca, dianalisis, dan direkodkan ke dalam fail markdown dokumentasi rasmi projek ini.
+                    Dataset canonical hanya menggunakan pemerhatian daripada profil sosial founder yang dibuka pada 15 Oktober 2026. Preset harga, bank details, event, hook viral dan ownership yang tiada provenance telah dikarantin.
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <h4 className="font-extrabold text-sm text-[var(--ui-text)] uppercase tracking-wide border-b pb-1">
-                    1. Struktur Fail Monorepo Yang Disahkan
+                    1. Sumber Canonical Social Evidence
                   </h4>
                   <pre className="bg-[var(--ui-surface)] text-[var(--ui-muted)] p-4 rounded-xl overflow-x-auto font-mono text-[11px] leading-relaxed">
-{`H:\\ANTIGRAVITY\\ABANG-COLEK\\
-├── abang-colek-brand-os/          (React 19 + TypeScript + Vite Dashboard)
-│   ├── src/preset.ts             (15-Slide Deck, Manifesto, TikTok SOP)
-│   └── skills/                   (100+ modul kemahiran automasi)
-├── abang-colek-mobile/            (React Native / Expo + Drizzle)
-│   ├── lib/preset-data.ts        (10 Viral Hooks, Checklists, Badges)
-│   ├── lib/whatsapp-templates.ts (12 Templat WhatsApp WOCS)
-│   ├── lib/jingle-lyrics.ts      ('Kasi Lagi-Lagi' BPM 85-95)
-│   └── server/wocs/              (Parser arahan WhatsApp /command)
-├── abang-colek-wocs-extension/    (Manifest V3 Chrome Extension)
-│   ├── content/                  (Suntikan UI ke web.whatsapp.com)
-│   └── popup/                    (Panel kawalan extension)
-├── wocs-server/                   (Express + Meta Cloud API Webhook)
-├── WAWCD/                         (14 Tangkap Layar Bukti Suntikan UI)
-├── sample-image/                  (18 Aset Visual Maskot 1-5 & Founder)
-├── Kasi Lagi-Lagi.mp3             (Master Audio Jingle 1 Minit)
-└── REPOS.md                       (Pelan Induk Orkestrasi)`}
+{`src/data/abangcolekSocialSourceOfTruth.ts
+├── SOCIAL_ACCOUNTS                 (5 public profile snapshots)
+├── OBSERVED_PRODUCT_SIGNALS        (visual signal, not SKU catalogue)
+├── OBSERVED_CONTENT_PILLARS        (6 patterns from founder content)
+├── OBSERVED_TIKTOK_POPULAR_VIEW_SNAPSHOTS
+└── VERIFIED_SOCIAL_TAGLINES        (phrases seen on profiles)
+
+Boundary: social ≠ price ledger ≠ stock ledger ≠ payment authority`}
                   </pre>
 
                   <h4 className="font-extrabold text-sm text-[var(--ui-text)] uppercase tracking-wide border-b pb-1 pt-2">
-                    2. Data Operasi Penting Yang Telah Digunakan Untuk Penambahbaikan
+                    2. Data Yang Sengaja Dikarantin
                   </h4>
                   <ul className="list-disc pl-5 space-y-1.5 text-[var(--ui-text)]">
-                    <li><strong className="text-[var(--ui-text)]">Pengasas & Pengurusan:</strong> Megat Shaifulreza (Epull) di bawah Liurleleh House Malaysia.</li>
-                    <li><strong className="text-[var(--ui-text)]">3 Slogan Mengikut Konteks:</strong> Cetakan (&quot;Rasa Padu, Pedas Menggamit&quot;), TikTok (&quot;PEDAS MANIS LIKAT MELEKAT 🌶️🥭&quot;), Emosi (&quot;Rasa Sekali Jatuh Cinta Selamanya&quot;).</li>
-                    <li><strong className="text-[var(--ui-text)]">Struktur Harga & SKU:</strong> 250ml (RM15), 500ml (RM28), 1L (RM50) & Promosi Beli 3 Percuma 1.</li>
-                    <li><strong className="text-[var(--ui-text)]">Logistik Bas Ekspres & SOP 1 Jam:</strong> TBS KL, MBKT Kuala Terengganu, Lembah Sireh Kota Bharu, Larkin JB dengan notifikasi WhatsApp pantas.</li>
-                    <li><strong className="text-[var(--ui-text)]">Enjin Arahan WhatsApp WOCS:</strong> Menyokong arahan <code className="bg-[var(--ui-soft)] px-1 rounded font-mono">/landing</code>, <code className="bg-[var(--ui-soft)] px-1 rounded font-mono">/config</code>, <code className="bg-[var(--ui-soft)] px-1 rounded font-mono">/assign</code>, <code className="bg-[var(--ui-soft)] px-1 rounded font-mono">/tiktok</code>, dan <code className="bg-[var(--ui-soft)] px-1 rounded font-mono">/report</code>.</li>
+                    <li><strong className="text-[var(--ui-text)]">Harga, SKU dan promosi:</strong> UNKNOWN sehingga founder memberi catalogue/price record yang diluluskan.</li>
+                    <li><strong className="text-[var(--ui-text)]">Bank details dan payment:</strong> tidak boleh diambil daripada preset atau caption lama.</li>
+                    <li><strong className="text-[var(--ui-text)]">Event, lokasi dan stok:</strong> perlu event/ops record semasa; social snapshot hanya menunjukkan signal, bukan authority.</li>
+                    <li><strong className="text-[var(--ui-text)]">Hook viral dan conversion:</strong> metrik popular snapshot tidak dipautkan kepada per-video URL atau order evidence.</li>
                   </ul>
                 </div>
               </div>
@@ -1738,76 +1719,32 @@ export const AbangColekDiscoveryView: React.FC<AbangColekDiscoveryViewProps> = (
           </div>
         )}
 
-        {/* SUBTAB 5: SOCIAL CHANNELS COVERAGE */}
+        {/* SUBTAB 5: SOCIAL EVIDENCE COVERAGE */}
         {activeSubTab === 'channels' && (
           <div className="space-y-4">
             <div className="p-4 rounded-2xl bg-[var(--ui-soft)] border border-[var(--ui-border)]">
-              <h3 className="text-sm font-bold text-[var(--ui-text)] mb-1">Saluran Media Sosial Rasmi Abang Colek & StyloAirpool</h3>
-              <p className="text-xs text-[var(--ui-muted)]">
-                128 rekod ternormal diekstrak daripada platform awam tanpa sebarang token akses sulit.
-              </p>
+              <h3 className="text-sm font-bold text-[var(--ui-text)] mb-1">Social Evidence Canonical</h3>
+              <p className="text-xs text-[var(--ui-muted)]">{SOCIAL_ACCOUNTS.length} profil awam, snapshot 15 Oktober 2026. Metrik di bawah ialah pemerhatian semasa, bukan sejarah analytics atau katalog operasi.</p>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-5 rounded-3xl bg-[var(--ui-surface)] border border-[var(--ui-border)] shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-[var(--ui-text)] flex items-center gap-2">
-                    <span>TikTok Rasmi</span>
-                    <code className="text-xs font-mono bg-[var(--ui-soft)] px-2 py-0.5 rounded">@styloairpool</code>
-                  </span>
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                    81 URLs (100% Extracted)
-                  </span>
+              {SOCIAL_ACCOUNTS.map((account) => (
+                <div key={account.id} className="p-5 rounded-3xl bg-[var(--ui-surface)] border border-[var(--ui-border)] shadow-xs space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <span className="font-bold text-sm text-[var(--ui-text)] block">{account.platform.toUpperCase()} · {account.handle}</span>
+                      <a href={account.url} target="_blank" rel="noreferrer" className="text-[11px] text-[var(--ui-accent-text)] underline break-all">{account.url}</a>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">{account.identityStatus}</span>
+                  </div>
+                  <p className="text-xs text-[var(--ui-text)] font-semibold">{account.displayName || account.handle}</p>
+                  <p className="text-xs text-[var(--ui-muted)] leading-relaxed">{account.bio || 'Bio tidak direkodkan dalam snapshot.'}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(account.publicMetrics).map(([key, value]) => <span key={key} className="text-[10px] px-2 py-1 rounded-lg bg-[var(--ui-soft)] text-[var(--ui-text)]"><b>{key}:</b> {value}</span>)}
+                  </div>
+                  <p className="text-[10px] text-[var(--ui-muted)]">Signals: {account.observedSignals.slice(0, 4).join(' · ')}</p>
+                  <p className="text-[10px] text-[var(--ui-warning-text)]">Limitations: {account.limitations[0]}</p>
                 </div>
-                <p className="text-xs text-[var(--ui-muted)] leading-relaxed font-medium">
-                  79 video diekstrak melalui <code>yt-dlp</code> + 2 URL media. Memaparkan jualan buah potong celup kuah colek melimpah di karnival Johor Bahru.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-3xl bg-[var(--ui-surface)] border border-[var(--ui-border)] shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-[var(--ui-text)] flex items-center gap-2">
-                    <span>Instagram Rasmi</span>
-                    <code className="text-xs font-mono bg-[var(--ui-soft)] px-2 py-0.5 rounded">@airpoolstylo</code>
-                  </span>
-                  <span className="text-xs font-bold text-[var(--ui-accent-text)] bg-[var(--ui-soft)] px-2.5 py-0.5 rounded-full">
-                    11 Posts / Reels
-                  </span>
-                </div>
-                <p className="text-xs text-[var(--ui-muted)] leading-relaxed font-medium">
-                  Pengumuman lokasi booth festival, hebahan jualan kuah pencicah buah segar, dan nombor pesanan terus WhatsApp.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-3xl bg-[var(--ui-surface)] border border-[var(--ui-border)] shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-[var(--ui-text)] flex items-center gap-2">
-                    <span>Threads Awam</span>
-                    <code className="text-xs font-mono bg-[var(--ui-soft)] px-2 py-0.5 rounded">@airpoolstylo</code>
-                  </span>
-                  <span className="text-xs font-bold text-[var(--ui-accent-ink)] bg-[var(--ui-accent)] px-2.5 py-0.5 rounded-full">
-                    15 Posts Awam
-                  </span>
-                </div>
-                <p className="text-xs text-[var(--ui-muted)] leading-relaxed font-medium">
-                  Kemas kini harian baki stok gerai pop-up dan maklum balas pelanggan gerai.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-3xl bg-[var(--ui-surface)] border border-[var(--ui-border)] shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-[var(--ui-text)] flex items-center gap-2">
-                    <span>Rangkaian Stokis Terengganu</span>
-                    <code className="text-xs font-mono bg-[var(--ui-soft)] px-2 py-0.5 rounded">@jeruxsliurlelehterengganu</code>
-                  </span>
-                  <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full">
-                    12 Pos Ejen
-                  </span>
-                </div>
-                <p className="text-xs text-[var(--ui-muted)] leading-relaxed font-medium">
-                  Aktiviti pengedaran kuah colek & jeruk buah buatan tangan untuk pelanggan sekitar Pantai Timur.
-                </p>
-              </div>
+              ))}
             </div>
           </div>
         )}

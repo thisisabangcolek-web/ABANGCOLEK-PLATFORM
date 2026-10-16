@@ -6,6 +6,12 @@ project: "D:/ABANGCOLEK-OS"
 scope: "Homepage scroll journey, original brand assets, editorial product image, browser acceptance"
 ---
 
+<!-- ABANGCOLEK_DOC_AUTHORITY_V1 -->
+> **HISTORICAL_SNAPSHOT — context diselaraskan 3 Oktober 2026.** Kandungan/metadata asal di bawah ialah bukti atau cadangan pada tarikh asal, bukan current runtime/authorization/release proof. Gunakan [Source of Truth](../docs/ABANGCOLEK-SOURCE-OF-TRUTH.md) dan [handover A–Z](../docs/handover/AGENT-HANDOVER-A-Z.md) untuk keputusan semasa. Server3000/3010 STOPPED pada snapshot20:25MYT; data kekal OS; Emons goal PAUSED. Native provider/benchmark/cost/complete claims perlu verifikasi sendiri.
+>
+> Scope correction: COMPLETE_LOCAL dalam metadata asal tidak menutup current Emons scene goal PAUSED. Hotspot rearming regression dan final live acceptance masih backlog D06.
+
+
 # Pelaksanaan hero Emons dan aset asli ABANGCOLEK
 
 ## 1. Hasil dan status semasa

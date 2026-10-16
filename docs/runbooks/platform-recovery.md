@@ -1,8 +1,10 @@
 # ABANGCOLEK — Runbook operasi dan pemulihan platform
 
-**Dikemas kini:** 2 Oktober 2026 (Asia/Kuala_Lumpur). **Scope:** runtime first-party Bun/SQLite dan React/Vite dalam checkout ini. Runbook ini tidak mengesahkan cloud deployment, founder sign-off atau sambungan vendor.
+**Dikemas kini:** 4 Oktober 2026 (Asia/Kuala_Lumpur). **Scope:** runtime first-party Bun/SQLite dan React/Vite. [Source of Truth](../ABANGCOLEK-SOURCE-OF-TRUTH.md) membezakan source PLATFORM daripada retained OS data; UI3000/API3010 kini running lokal selepas verified source-only switch. [Handover](../handover/AGENT-HANDOVER-A-Z.md) memegang checkpoint dan gates. Runbook ini tidak mengesahkan cloud deployment, founder sign-off atau sambungan vendor.
 
 Rujukan: [implementation ledger](../../reports/PLATFORM_EXPANSION_IMPLEMENTATION_2026-10-02.md) · [17-task plan](../superpowers/plans/2026-10-02-platform-expansion.md).
+
+**Keputusan pengguna:** kekalkan runtime/data di `D:\ABANGCOLEK-OS\var` dahulu dengan canonical source PLATFORM. Local source-only switch4Oktober telah melalui fresh recovery, loopback identity dan reconciliation5business-table row hashes. Restore ke root baharu bukan pilihan semasa; backup drill tetap private isolated. Build menggunakan verified isolated restore dengan data sama, supaya DB asal tidak dibuka oleh readonly SQLite. Current receipts dalam capability matrix §10.
 
 ## 1. Peta runtime dan sumber kebenaran
 
@@ -36,18 +38,22 @@ Rujukan: [implementation ledger](../../reports/PLATFORM_EXPANSION_IMPLEMENTATION
 | `var/log/platform-worker.jsonl` | Ralat worker yang sudah diredact |
 | `var/lib/qa/` | Database QA disposable; bukan rekod bisnes |
 
-`PLATFORM_RUNTIME_ROOT` boleh memilih root runtime berasingan. Setiap command mesti menggunakan root yang disengajakan. Tiada dual-write ke Supabase; cloud data dan cloud identities terdahulu tidak dipindahkan secara automatik.
+`PLATFORM_RUNTIME_ROOT` boleh memilih root runtime berasingan. **Build prerender menggunakan PLATFORM_DATABASE**, bukan runtime-root; set kedua-duanya apabila source/data root berbeza. Setiap command mesti menggunakan root yang disengajakan. Tiada dual-write ke Supabase; cloud data dan cloud identities terdahulu tidak dipindahkan secara automatik.
 
 ## 2. Startup dan pemeriksaan readiness
 
-Jalankan dari checkout sedia ada. Jangan clone, reinstall, reset atau recreate projek untuk mengatasi kegagalan listener.
+Preview/API kini menggunakan source `D:\ABANGCOLEK-PLATFORM` dan retained OSvar. Refresh listener sebelum operasi. Jangan lancarkan instance kedua pada port3000/3010 atau menganggap API yang ready ialah API checkout yang betul. Launcher B04 hanya reuse identity configured checkout/runtime/database yang sepadan. Missing/malformed/mismatched/HTTPerror/timeout/redirect abort; hanya structured connection-refused membenarkan spawn. Existing listeners tidak dihentikan.
+
+Contoh di bawah untuk startup akan datang selepas listener/identity diperiksa. Runtime kini sudah running; jangan buka launcher tambahan tanpa keperluan. Ia mengekalkan runtime/data OS dengan source PLATFORM; pilih root yang sama dan jangan ubah root semasa API hidup. Prerender selector berasingan diperlukan apabila build: pilih verified snapshot jika DB asal live.
 
 ```powershell
-Set-Location -LiteralPath 'D:\ABANGCOLEK-OS'
+Set-Location -LiteralPath 'D:\ABANGCOLEK-PLATFORM'
+$env:PLATFORM_RUNTIME_ROOT = 'D:\ABANGCOLEK-OS\var'
+$env:PLATFORM_DATABASE = 'D:\ABANGCOLEK-OS\var\lib\platform\platform.sqlite'
 bun run dev
 ```
 
-Command sebenar [`scripts/dev.ts`](../../scripts/dev.ts) melancarkan API lokal jika readiness belum tersedia, kemudian Vite pada port 3000. Ia menggunakan semula API ready pada port yang dipilih dan hanya menghentikan child process yang dimulakannya sendiri. `Ctrl+C` menamatkan launcher dan child yang dimilikinya; API sedia ada yang digunakan semula kekal di bawah pemilik asal.
+Command sebenar [`scripts/dev.ts`](../../scripts/dev.ts) menyemak `/api/platform/runtime-identity` dahulu, melancarkan API hanya selepas connection refusal, mengesahkan identity sebelum Vite3000, dan membersihkan children/handles miliknya pada error/shutdown. Identity GET-only loopback/private/no-store mempunyai limiter memory120/min; bukan authentication. `Ctrl+C` menamatkan child yang dimiliki; reused API kekal di bawah pemilik asal. Logs berada di runtimeRoot terpilih.
 
 Semak dari terminal kedua:
 
@@ -111,9 +117,9 @@ Backup CLI menyimpan serialized database, fail evidence yang dirujuk dan manifes
 Contoh PowerShell — semak source dan gunakan nama destination baharu:
 
 ```powershell
-Set-Location -LiteralPath 'D:\ABANGCOLEK-OS'
+Set-Location -LiteralPath 'D:\ABANGCOLEK-PLATFORM'
 $backupStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-$databasePath = Join-Path (Get-Location) 'var\lib\platform\platform.sqlite'
+$databasePath = 'D:\ABANGCOLEK-OS\var\lib\platform\platform.sqlite'
 $snapshotPath = Join-Path (Get-Location) "var\lib\backups\platform-$backupStamp"
 $restorePath = Join-Path (Get-Location) "var\lib\restore-drills\platform-$backupStamp"
 if (-not (Test-Path -LiteralPath $databasePath -PathType Leaf)) {
@@ -125,7 +131,7 @@ bun scripts/platform-backup.ts restore $snapshotPath $restorePath
 if ($LASTEXITCODE -ne 0) { throw 'Restore verification gagal.' }
 ```
 
-Restore drill hanya menghasilkan directory baharu, bukan mengaktifkan database pulih. **Jangan copy fail ke atas database aktif atau menukar `PLATFORM_RUNTIME_ROOT` semasa API masih berjalan.** Cutover sebenar memerlukan pause writes, shutdown yang disahkan, snapshot terkini, keputusan pemilik tentang data selepas snapshot, kemudian pemilihan root/host yang betul dan smoke test scoped. Runbook ini tidak melakukan cutover. Snapshot lokal juga bukan off-site backup; operator perlu memilih retention, host encryption dan salinan luar secara berasingan.
+Restore drill hanya menghasilkan directory baharu, bukan mengaktifkan database pulih. Output ialah `restoreDirectory/platform.sqlite` dan evidence secara direct; untuk runtime baru gunakan destination `<newRuntimeRoot>/lib/platform`. Backup CLI membuka PlatformStore yang boleh menjalankan constructor migrations; final snapshot diambil selepas writers disahkan berhenti. **Jangan copy fail ke atas database aktif atau menukar `PLATFORM_RUNTIME_ROOT` semasa API masih berjalan.** Cutover sebenar memerlukan pause writes, shutdown yang disahkan, snapshot terkini, keputusan pemilik tentang data selepas snapshot, kemudian pemilihan root/host yang betul dan smoke test scoped. Runbook ini tidak melakukan cutover. Snapshot lokal juga bukan off-site backup; operator perlu memilih retention, host encryption dan salinan luar secara berasingan.
 
 ## 7. Recovery pesanan, kewangan dan stok
 
@@ -174,7 +180,7 @@ JEV mode sekarang `LOCAL_RULES`: typed review, source version, unknown/abstentio
 
 ```powershell
 bun run lint
-bun test --coverage tests/jev tests/platform tests/dashboard-model.test.ts
+bun test --coverage --coverage-dir=var/log/coverage ./tests/jev ./tests/platform ./tests/dashboard-model.test.ts
 bun run build
 ```
 
@@ -198,6 +204,6 @@ $env:PLATFORM_TEST_URL = 'http://127.0.0.1:3001'
 bunx playwright test -c tests/playwright.config.ts --output var/log/playwright-release
 ```
 
-Runner QA menulis ignored fixture/credentials ke `var/run/e2e-fixture.json`; jangan sertakan fail ini dalam report. Setiap browser run selari mesti mempunyai output directory berlainan. Screenshot, test artifacts dan reports dikecualikan daripada Vite watch supaya penulisan evidence tidak reload flow yang sedang diuji.
+Runner QA menulis ignored fixture/credentials ke `var/run/e2e-fixture.json`; jangan sertakan fail ini dalam report. Output directory hendaklah berasingan, tetapi QA3011/3001 dan e2e-fixture.json ialah single-run resources: jangan jalankan fixture runners selari. Screenshot, test artifacts dan reports dikecualikan daripada Vite watch supaya penulisan evidence tidak reload flow yang sedang diuji.
 
 Keputusan terakhir dan limitation disimpan dalam implementation ledger. Coverage hanya merangkumi fail yang dimuatkan suite; ia bukan audit semua legacy files, WCAG certification, SLA, field INP atau founder business acceptance.

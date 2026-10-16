@@ -15,24 +15,30 @@ import { Empty,MutationButton,NavigateButton,Panel,RecordMeta,Refresh,ResourceSt
 import './workspaces.css';
 import { RuntimeControls } from './RuntimeControls';
 import { AutomationWorkspace } from './AutomationWorkspace';
+import { PluginsWorkspace } from './PluginsWorkspace';
 import { JevEvaluationWorkspace } from './JevEvaluationWorkspace';
 import { ReportBuilder } from './ReportBuilder';
 import { DerivedCalendar } from './DerivedCalendar';
 import { LinkedRecordContext } from './LinkedRecordContext';
 import { DayCloseAmendments,ExpensePostings,PeopleInvitations,PersonalOperationalSettings } from './OperationalAmendments';
+import { DeveloperReports } from './DeveloperReports';
+import { DeveloperSettings } from './DeveloperSettings';
+import { ProductOnboarding } from './ProductOnboarding';
+
 
 export interface WorkspaceContentProps { role: WorkspaceRole; section: string; entityId?:string; onNavigate: (path: string) => void; onChanged?: () => void; }
 const titles: Record<string,[string,string]>={
-  overview: ['Make the next move.','Satu tempat untuk rekod, keputusan dan kerja yang selesai.'],orders: ['Every order. In context.','Payment, packing dan delivery daripada rekod yang sama.'],shop: ['Pilih. Order. Enjoy.','Published products, harga semasa dan pesanan anda.'],inventory: ['Know what moves.','Stok fizikal, ownership dan custody dalam satu ledger.'],cases: ['Resolve with evidence.','Siasat pemerhatian, semak unknowns dan bantu customer.'],tasks: ['Move work forward.','Tugasan yang assigned, due dates dan outcome sebenar.'],documents: ['Write it. Keep it.','Dokumen berpusat dengan visibility dan versi yang jelas.'],knowledge: ['Good work has a source.','Approved knowledge dan SOP yang versioned.'],calendar: ['Plan the week ahead.','Jadual kerja dalam MYT, linked kepada rekod bisnes.'],finance: ['Keep the numbers honest.','Verified receipts, expenses dan reconciliation.'],dealers: ['Build the network.','Kelulusan dealer, terma dan fulfilment B2B.'],business: ['Your business, connected.','Permohonan, restock dan stock receiving milik organisasi anda.'],marketing: ['Make something worth sharing.','Draft, rights, exact approval dan manual export.'],qc: ['Quality leaves a trail.','Inspection readings, approved SOP dan day close.'],shifts: ['A clear handoff.','Count, custody dan isu belum selesai antara shift.'],people: ['The right access.','Team roles dan outlet scope, enforced oleh server.'],settings: ['Your operating rules.','Policy yang diluluskan dengan version dan audit.'],reports: ['See the source.','Reports boleh dijejak kepada transaksi yang sebenar.'],health: ['Know the runtime.','Status komponen yang observed, tanpa credential exposure.'],jobs: ['Automation with receipts.','Queue, attempts dan recovery yang boleh diperiksa.'],
+  overview: ['Make the next move.','Satu tempat untuk rekod, keputusan dan kerja yang selesai.'],orders: ['Every order. In context.','Payment, packing dan delivery daripada rekod yang sama.'],shop: ['Pilih. Order. Enjoy.','Published products, harga semasa dan pesanan anda.'],inventory: ['Know what moves.','Stok fizikal, ownership dan custody dalam satu ledger.'],cases: ['Resolve with evidence.','Siasat pemerhatian, semak unknowns dan bantu customer.'],tasks: ['Move work forward.','Tugasan yang assigned, due dates dan outcome sebenar.'],documents: ['Write it. Keep it.','Dokumen berpusat dengan visibility dan versi yang jelas.'],knowledge: ['Good work has a source.','Approved knowledge dan SOP yang versioned.'],calendar: ['Plan the week ahead.','Jadual kerja dalam MYT, linked kepada rekod bisnes.'],finance: ['Keep the numbers honest.','Verified receipts, expenses dan reconciliation.'],dealers: ['Build the network.','Kelulusan dealer, terma dan fulfilment B2B.'],business: ['Your business, connected.','Permohonan, restock dan stock receiving milik organisasi anda.'],marketing: ['Make something worth sharing.','Draft, rights, exact approval dan manual export.'],automations: ['Run the work without repeating yourself.','Schedule, trigger, webhook, connector dan run receipt dalam satu control center.'],plugins: ['Connect the tools you already use.','OAuth, API, browser session dan MCP connectors dengan permission yang jelas.'],qc: ['Quality leaves a trail.','Inspection readings, approved SOP dan day close.'],shifts: ['A clear handoff.','Count, custody dan isu belum selesai antara shift.'],people: ['The right access.','Team roles dan outlet scope, enforced oleh server.'],settings: ['Your operating rules.','Policy yang diluluskan dengan version dan audit.'],reports: ['See the source.','Reports boleh dijejak kepada transaksi yang sebenar.'],health: ['Know the runtime.','Status komponen yang observed, tanpa credential exposure.'],jobs: ['Automation with receipts.','Queue, attempts dan recovery yang boleh diperiksa.'],
 };
 export function WorkspaceContent({ role,section,entityId,onNavigate,onChanged }: WorkspaceContentProps) {
   const [title,description]=titles[section]??titles.overview;
   let content;
-  if(role==='developer') content=<Developer section={section} />;
+  if(role==='developer') content=<Developer section={section} onChanged={onChanged} />;
   else switch(section) {
+
     case 'orders': content=<Orders entityId={entityId} role={role} onChanged={onChanged} />; break;
     case 'shop': content=<Shop onNavigate={onNavigate} />; break;
-    case 'inventory': content=<Inventory role={role} onChanged={onChanged} />; break;
+    case 'inventory': content=<><Inventory role={role} onChanged={onChanged} />{role==='founder'&&<ProductOnboarding onNavigate={onNavigate} onChanged={onChanged} />}</>; break;
     case 'cases': content=<Cases entityId={entityId} role={role} onChanged={onChanged} renderAssessment={caseId => <CaseAssessment caseId={caseId} />} />; break;
     case 'tasks': content=<Tasks entityId={entityId} role={role} onChanged={onChanged} />; break;
     case 'documents': content=<Documents entityId={entityId} onChanged={onChanged} />; break;
@@ -40,7 +46,9 @@ export function WorkspaceContent({ role,section,entityId,onNavigate,onChanged }:
     case 'calendar': content=<><Calendar role={role} onNavigate={onNavigate} onChanged={onChanged}/><DerivedCalendar onNavigate={onNavigate}/></>; break;
     case 'finance': content=<><Finance onChanged={onChanged}/><ExpensePostings onChanged={onChanged}/></>; break;
     case 'dealers': case 'business': content=<Dealers role={role} onNavigate={onNavigate} onChanged={onChanged} />; break;
-    case 'marketing': content=<><Marketing role={role} onChanged={onChanged}/>{role==='founder'&&<AutomationWorkspace role={role} onChanged={onChanged}/>}</>; break;
+    case 'marketing': content=<Marketing role={role} onChanged={onChanged}/>; break;
+    case 'automations': content=<AutomationWorkspace role={role} onChanged={onChanged}/>; break;
+    case 'plugins': content=<PluginsWorkspace/>; break;
     case 'jev': content=<JevEvaluationWorkspace/>;break;
     case 'qc': content=<><Qc role={role} onChanged={onChanged}/>{role==='founder'&&<DayCloseAmendments onChanged={onChanged}/>}</>; break;
     case 'shifts': content=<Shifts role={role} onChanged={onChanged} />; break;
@@ -186,10 +194,13 @@ function StaffEssentials({ onNavigate }: { onNavigate: (path: string) => void })
     <div className="xp-actions"><NavigateButton label="Shift & handoff" to="/staff/shifts" onNavigate={onNavigate} /><NavigateButton label="Approved SOP" to="/staff/knowledge" onNavigate={onNavigate} /></div>
   </>;
 }
-function Developer({ section }: { section: string; }) {
-  if(section==='jev')return <JevEvaluationWorkspace/>;
-  return <DeveloperRuntime section={section}/>;
+function Developer({ section, onChanged }: { section: string; onChanged?: () => void }) {
+  if (section === 'jev') return <JevEvaluationWorkspace />;
+  if (section === 'reports') return <DeveloperReports />;
+  if (section === 'settings') return <DeveloperSettings onChanged={onChanged} />;
+  return <DeveloperRuntime section={section} />;
 }
+
 function DeveloperRuntime({ section }: { section: string; }) {
   const health=useResource<RedactedHealth[]>('/health');
   const jobs=useResource<JobRecord[]>('/jobs');

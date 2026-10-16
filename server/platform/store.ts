@@ -73,6 +73,9 @@ export class PlatformStore {
     this.db.query('INSERT INTO records(kind,id,data,updated_at) VALUES(?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data,updated_at=excluded.updated_at').run(kind, record.id, JSON.stringify(record), now());
     return record;
   }
+  delete(kind: string, recordId: string) {
+    this.db.query('DELETE FROM records WHERE kind=? AND id=?').run(kind, recordId);
+  }
   metadata(key: string): string | null { return this.db.query<{value:string}, [string]>('SELECT value FROM metadata WHERE key=?').get(key)?.value ?? null; }
   setMetadata(key: string, value: string) { this.db.query('INSERT INTO metadata(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run(key, value); }
   atomic<T>(callback: () => T): T { return this.db.transaction(callback).immediate(); }

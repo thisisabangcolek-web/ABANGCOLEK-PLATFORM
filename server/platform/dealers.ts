@@ -228,7 +228,43 @@ export class Dealers {
   terms():DealerTerms{return this.store.get<BusinessSettings>('settings','business')?.approvedPolicies.dealer??fail('DEALER_POLICY_UNAVAILABLE',409,'Polisi dealer belum diluluskan.');}
   applications(actor:Principal){return this.store.all<DealerApplication>('dealer_applications').filter(a=>a.customerId===actor.user.id||this.auth.has(actor,'founder'));}
   apply(actor:Principal,raw:unknown){const input=object(raw);fields(input,['organization','description']);if(this.applications(actor).some(a=>a.customerId===actor.user.id&&a.status==='pending'))fail('APPLICATION_PENDING',409);const record:DealerApplication={id:id(),customerId:actor.user.id,organization:text(input.organization,'Organisasi',200),description:text(input.description,'Penerangan',6000),status:'pending',revision:1,createdAt:now()};this.store.save('dealer_applications',record);this.store.audit(actor.user.id,'dealer.apply',record.id);return record;}
-  decide(actor:Principal,applicationId:string,raw:unknown,approve:boolean){this.auth.founder(actor);const input=object(raw);fields(input,['expectedRevision','reason']);const record=this.store.require<DealerApplication>('dealer_applications',applicationId);this.store.revision(record.revision,input.expectedRevision);if(record.status!=='pending')fail('INVALID_TRANSITION',409);if(!approve)text(input.reason,'Sebab penolakan',3000);const organizationId=approve?id():undefined,updated={...record,status:approve?'approved' as const:'rejected' as const,revision:record.revision+1,...(organizationId?{dealerOrgId:organizationId}:{})};this.store.save('dealer_applications',updated);if(organizationId){const current=this.auth.memberships(record.customerId).find(m=>m.role==='customer')!;this.auth.grant(actor,{userId:record.customerId,role:'customer',outletIds:[],dealerOrgId:organizationId,expectedVersion:current.version});}this.store.audit(actor.user.id,'dealer.decide',applicationId,updated.revision);return updated;}
+  decide(actor: Principal, applicationId: string, raw: unknown, approve: boolean): DealerApplication {
+    this.auth.founder(actor);
+    const input = object(raw);
+    fields(input, ['expectedRevision', 'reason']);
+    if (!approve) text(input.reason, 'Sebab penolakan', 3000);
+
+    // Approval, membership and audit must commit together, including revision checks.
+    return this.store.atomic(() => {
+      const record = this.store.require<DealerApplication>('dealer_applications', applicationId);
+      this.store.revision(record.revision, input.expectedRevision);
+      if (record.status !== 'pending') fail('INVALID_TRANSITION', 409);
+      const current = approve
+        ? this.auth.memberships(record.customerId).find(member => member.role === 'customer' && member.status === 'active')
+        : undefined;
+      if (approve && !current) fail('ACTIVE_CUSTOMER_REQUIRED', 409, 'Keahlian pelanggan aktif diperlukan.');
+
+      const organizationId = approve ? id() : undefined;
+      const updated: DealerApplication = {
+        ...record,
+        status: approve ? 'approved' : 'rejected',
+        revision: record.revision + 1,
+        ...(organizationId ? { dealerOrgId: organizationId } : {}),
+      };
+      this.store.save('dealer_applications', updated);
+      if (organizationId && current) {
+        this.auth.grant(actor, {
+          userId: record.customerId,
+          role: 'customer',
+          outletIds: current.outletIds,
+          dealerOrgId: organizationId,
+          expectedVersion: current.version,
+        });
+      }
+      this.store.audit(actor.user.id, 'dealer.decide', applicationId, updated.revision);
+      return updated;
+    });
+  }
   quote(actor:Principal,raw:unknown){const input=object(raw);fields(input,['dealerOrgId','lines','priceVersion']);const organizationId=text(input.dealerOrgId);this.dealer(actor,organizationId);const terms=this.terms();if(integer(input.priceVersion)!==terms.version)fail('REQUOTE_REQUIRED',409);const lines=this.commerce.lines(input.lines);const quantity=lines.reduce((sum,l)=>sum+l.quantity,0);if(quantity<terms.minimumQuantity||lines.some(l=>l.quantity%terms.packMultiple!==0))fail('DEALER_QUANTITY_POLICY',400);const standard=this.commerce.quote(actor,{lines,catalogueVersion:this.commerce.version()});const quote:VersionedQuote={...standard,id:id(),dealerOrgId:organizationId,priceVersion:terms.version,lines:standard.lines.map(l=>({...l,priceSen:Math.floor(l.priceSen*terms.priceBasisPoints/10000)})),totalSen:0};quote.totalSen=quote.lines.reduce((sum,l)=>sum+l.priceSen*l.quantity,0);this.store.save('quotes',quote);return quote;}
   restocks(actor:Principal){const organizations=this.organizations(actor);return this.store.all<RestockRecord>('restocks').filter(r=>this.auth.has(actor,'founder')||organizations.has(r.dealerOrgId));}
   request(actor:Principal,raw:unknown,key:unknown){const input=object(raw);fields(input,['quoteId']);const quote=this.store.require<VersionedQuote>('quotes',text(input.quoteId));if(!quote.dealerOrgId)fail('INVALID_QUOTE');this.dealer(actor,quote.dealerOrgId);return this.commerce.idem(actor,'restock.request',key,raw,()=>{const terms=this.terms();if(quote.priceVersion!==terms.version||quote.catalogueVersion!==this.commerce.version()||quote.expiresAt<=now())fail('REQUOTE_REQUIRED',409);for(const line of quote.lines)if(this.commerce.available(line.productId)<line.quantity)fail('INSUFFICIENT_STOCK',409);const record:DealerRestockRecord={id:id(),dealerTermsVersion:terms.version,returnRules:terms.returnRules,dealerOrgId:quote.dealerOrgId!,customerId:actor.user.id,quoteId:quote.id,lines:quote.lines,totalSen:quote.totalSen,status:'requested',revision:1,ownership:terms.ownership};this.store.save('restocks',record);for(const line of quote.lines)this.store.save<InventoryReservation>('reservations',{id:id(),orderId:record.id,productId:line.productId,ownerId:'business',locationId:'hq',quantity:line.quantity,status:'active',expiresAt:new Date(Date.now()+24*3600_000).toISOString(),revision:1});this.store.audit(actor.user.id,'restock.request',record.id);return record;});}

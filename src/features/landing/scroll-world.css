@@ -54,6 +54,8 @@
   background: linear-gradient(90deg, #111115ed 0%, #111115b8 26%, #11111528 56%, #11111505 80%), linear-gradient(0deg, #111115ed, #11111500 25%, #11111500 80%, #11111566);
 }
 .ac-world-product-photo { position:absolute; z-index:2; right:6%; top:86px; width:clamp(125px,12vw,175px); margin:0; transform:rotate(3deg); }
+/* Opacity preserves an in-progress native touch target while inactive content rejects new pointer hits. */
+.ac-world-product-photo[aria-hidden=true] { opacity:0; pointer-events:none; }
 .ac-world-product-photo > div { position:relative; aspect-ratio:3/4; overflow:clip; border-radius:18px; border:1px solid #ffffff35; box-shadow:0 24px 64px #0008; background:#171719; }
 .ac-world-product-photo img { display:block; position:absolute; width:100%; height:auto; top:50%; transform:translateY(-50%); }
 .ac-world-product-photo figcaption { display:flex; flex-direction:column; gap:5px; padding:12px 6px 0; color:#f7f6fb; }
@@ -295,7 +297,8 @@
 .ac-world-hotspot-ring { position:absolute; width:56px; height:56px; left:-4px; top:-4px; border:1px solid #cfff5e90; border-radius:50%; animation:ac-world-beacon 2.8s ease-out infinite; pointer-events:none; }
 .is-paused .ac-world-hotspot-ring { animation:none; }
 @keyframes ac-world-beacon { 0% { transform:scale(1); opacity:.6; } 80%,100% { transform:scale(1.65); opacity:0; } }
-.ac-world-dialog { width:min(430px,calc(100vw - 32px)); max-height:calc(100dvh - 40px); padding:24px 24px 36px; border:1px solid #6c637d; border-radius:20px; background:#24212c; color:#f7f6fb; box-shadow:0 30px 100px #0008; overflow-y:auto; overscroll-behavior:contain; font-family:'DM Sans',sans-serif; }
+/* Restore native modal centering after the global margin reset. */
+.ac-world-dialog { width:min(430px,calc(100vw - 32px)); max-height:calc(100dvh - 40px); margin:auto; padding:24px 24px 36px; border:1px solid #6c637d; border-radius:20px; background:#24212c; color:#f7f6fb; box-shadow:0 30px 100px #0008; overflow-y:auto; overscroll-behavior:contain; font-family:'DM Sans',sans-serif; }
 .ac-world-dialog::backdrop { background:#09090fb8; }
 .ac-world-dialog-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
 .ac-world-dialog-top > span { font-size:9px; color:#cfff5e; letter-spacing:1.4px; }

@@ -1,12 +1,29 @@
 import { useState } from 'react';
-import { CalendarDays,Download,Megaphone,Plus } from 'lucide-react';
+import { AtSign, CalendarDays, CheckCircle2, Download, Facebook, Globe2, Instagram, KeyRound, Linkedin, Megaphone, MonitorSmartphone, Music2, Plus, ShieldCheck, TriangleAlert, X, Youtube } from 'lucide-react';
 import type { CampaignAsset,CampaignRecord,ExportArtifact,PublicProduct,WorkspaceRole } from '../../../shared/platform-contracts';
+import type { SocialConnectionMethod, SocialConnectorSnapshot } from '../../../shared/social-contracts';
 import { api,useResource } from '../platform/client';
 import { campaignApprovalIssues,dateLabel,downloadText,malaysiaDateTime } from './experience-model';
 import { Empty,field,FormPanel,Panel,RecordMeta,Refresh,ResourceState,splitRefs,Status } from './ui';
 
+const methodIcons = { official_oauth: Globe2, browser_session: MonitorSmartphone, custom_api: KeyRound, mcp: ShieldCheck } as const;
+function providerIcon(provider: string) { const Icon = provider === 'threads' ? AtSign : provider === 'youtube' ? Youtube : provider === 'instagram' ? Instagram : provider === 'facebook' ? Facebook : provider === 'linkedin' ? Linkedin : provider === 'tiktok' ? Music2 : provider === 'x' ? X : Globe2; return <Icon size={17} aria-hidden="true" />; }
+
+function SocialConnectorPanel({ snapshot }: { snapshot?: SocialConnectorSnapshot }) {
+  const [selected, setSelected] = useState<SocialConnectionMethod>('official_oauth');
+  const method = snapshot?.methods.find(item => item.method === selected);
+  return <section className="xp-social-connectors" aria-labelledby="social-connectors-title">
+    <div className="xp-social-heading"><div><p className="xp-eyebrow">CONNECTOR-FIRST SOCIAL OPS</p><h3 id="social-connectors-title">Sambung akaun tanpa kongsi kata laluan</h3><p className="xp-muted">Official OAuth/API ialah laluan utama. Browser session dan Custom API/MCP hanya fallback yang diopt-in.</p></div><span className="xp-social-lock"><ShieldCheck size={16} /> Approval gate aktif</span></div>
+    <div className="xp-social-methods" role="tablist" aria-label="Kaedah sambungan social media">{snapshot?.methods.map(item => { const Icon=methodIcons[item.method]; return <button key={item.method} role="tab" aria-selected={selected===item.method} className={selected===item.method?'xp-social-method is-selected':'xp-social-method'} onClick={() => setSelected(item.method)}><Icon size={18}/><span><strong>{item.label}</strong><small>{item.status==='ready'?'Ready':'Belum dikonfigurasi'}</small></span></button>; })}</div>
+    {method&&<div className="xp-social-method-detail"><div><strong>{method.label}</strong><p>{method.description}</p><small>{method.securityNote}</small></div><Status value={method.status==='ready'?'ready':'gated'} /></div>}
+    <div className="xp-social-provider-grid">{snapshot?.providers.map(provider => <article className="xp-social-provider" key={provider.provider}><div><strong className="xp-social-provider-name"><span className={`xp-provider-mark xp-provider-${provider.provider}`}>{providerIcon(provider.provider)}</span>{provider.label}</strong><span className="xp-social-state"><span />{provider.status==='ready'?'Connected':'Not connected'}</span></div><p>{provider.accountRequirement}</p><button className="xp-button xp-secondary" disabled={provider.status!=='ready'}>{provider.status==='ready'?'Manage connection':'Connector belum aktif'}</button></article>)}</div>
+    <div className="xp-social-policy"><CheckCircle2 size={17}/><div><strong>Publish kekal memerlukan kelulusan</strong><p>Setiap platform hanya boleh menerima exact approved campaign revision, account scope dan provider receipt. Tiada auto-publish senyap.</p></div><TriangleAlert size={17}/></div>
+  </section>;
+}
+
 export function Marketing({ role,onChanged }: { role: WorkspaceRole; onChanged?: () => void; }) {
   const resource=useResource<CampaignRecord[]>('/campaigns');
+  const social=useResource<SocialConnectorSnapshot>('/social/connectors');
   const catalogue=useResource<PublicProduct[]>('/catalogue');
   const [editing,setEditing]=useState<CampaignRecord|'new'|null>(null);
   const [approving,setApproving]=useState<CampaignRecord|null>(null);
@@ -33,6 +50,8 @@ export function Marketing({ role,onChanged }: { role: WorkspaceRole; onChanged?:
         <Plus size={17} /> Kempen baharu</button>
     </div>}>
       <ResourceState {...resource} />
+      <ResourceState {...social} />
+      {social.data&&<SocialConnectorPanel snapshot={social.data} />}
       <div className="xp-channel-status">
         <Megaphone size={22} />
         <div>

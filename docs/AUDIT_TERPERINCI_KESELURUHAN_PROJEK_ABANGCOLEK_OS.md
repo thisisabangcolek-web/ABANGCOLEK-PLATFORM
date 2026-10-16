@@ -1,3 +1,8 @@
+<!-- ABANGCOLEK_DOC_AUTHORITY_V1 -->
+> **HISTORICAL_SNAPSHOT — context diselaraskan 3 Oktober 2026.** Kandungan/metadata asal di bawah ialah bukti atau cadangan pada tarikh asal, bukan current runtime/authorization/release proof. Gunakan [Source of Truth](ABANGCOLEK-SOURCE-OF-TRUTH.md) dan [handover A–Z](handover/AGENT-HANDOVER-A-Z.md) untuk keputusan semasa. Server3000/3010 STOPPED pada snapshot20:25MYT; data kekal OS; Emons goal PAUSED. Native provider/benchmark/cost/complete claims perlu verifikasi sendiri.
+>
+> Errata: compile/Supabase/production100% ialah assertions laporan asal, bukan fresh verification atau release receipt. Current local tests dan production gaps dalam registry mengatasi status asal.
+
 # AUDIT TERPERINCI DAN FORENSIK KESELURUHAN FAIL PROJEK ABANGCOLEK-OS
 **Penyelidikan Menyeluruh Setiap Fail Sumber, Konfigurasi, Antara Muka, Perkhidmatan & Aset**  
 *Tarikh Audit: 2026-09-30 | Sistem: ABANGCOLEK-OS (v4.2.0)*  

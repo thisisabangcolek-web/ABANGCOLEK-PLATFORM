@@ -9,6 +9,7 @@ import { Marketing } from './marketing';
 import { Operations } from './operations';
 import { Flows } from './flows';
 import { Jobs } from '../automation/jobs';
+import { AutomationDefinitions } from '../automation/definitions';
 import { boundedBody, EvidenceFiles } from './evidenceFiles';
 import { assessState } from './jev/assessment';
 import type { JevAssessment, JevPackId, JevState } from '../../shared/jev-contracts';
@@ -18,18 +19,32 @@ import { Automation } from '../automation/automation';
 import { JevEvaluations } from './jev/evaluations';
 import { Reports } from './reports';
 import { OperationalAmendments } from './operationalAmendments';
+import { BusinessOnboarding } from './onboarding';
+import { LegacyMigrationReconciler } from './migration/migrationReconciler';
+import { WhatsAppService, type WhatsAppTransport } from './whatsapp';
+import { LegacyPilotsService, VERIFIED_BUS_ROUTES } from './legacyPilots';
+import { FounderIntelligence } from './founder-intelligence';
+import { SocialConnections } from './social';
 
-export interface PlatformAppOptions { databasePath?:string; bootstrapToken?:string; origin?:string; allowedOrigins?:string[]; rateLimits?:{identityGlobal:number;identityAccount:number;actor:number}; log?:(entry:{requestId:string;code:string;status:number})=>void }
+import { HermesAdapter, type AutomationOptions } from '../automation/adapters';
+
+export interface PlatformAppOptions { databasePath?:string; bootstrapToken?:string; origin?:string; allowedOrigins?:string[]; rateLimits?:{identityGlobal:number;identityAccount:number;actor:number}; automationOptions?:AutomationOptions; whatsappTransport?:WhatsAppTransport; log?:(entry:{requestId:string;code:string;status:number})=>void }
 const cookieClear='platform_session=; HttpOnly; SameSite=Strict; Path=/api/platform; Max-Age=0';
 export function createPlatformApp(options:PlatformAppOptions={}) {
   const store=new PlatformStore(options.databasePath??'var/lib/platform/platform.sqlite');
   const auth=new Auth(store,options.bootstrapToken),commerce=new Commerce(store,auth),work=new Work(store,auth,commerce);
   const dealers=new Dealers(store,auth,commerce),marketing=new Marketing(store,auth,commerce,work),operations=new Operations(store,auth,commerce,work);
-  const flows=new Flows(store,auth,commerce,work,dealers),jobs=new Jobs(store,auth,commerce,work),evidenceFiles=new EvidenceFiles(store,work,options.databasePath??'var/lib/platform/platform.sqlite');
+  const flows=new Flows(store,auth,commerce,work,dealers),jobs=new Jobs(store,auth,commerce,work),automationDefinitions=new AutomationDefinitions(store,auth),evidenceFiles=new EvidenceFiles(store,work,options.databasePath??'var/lib/platform/platform.sqlite');
   const runtimeControls=new RuntimeControlCommands(store,auth);
-  const automation=new Automation(store,auth,commerce,work,marketing),jevEvaluations=new JevEvaluations(store,auth,commerce,work);
+  const automation=new Automation(store,auth,commerce,work,marketing,options.automationOptions),jevEvaluations=new JevEvaluations(store,auth,commerce,work);
   const reports=new Reports(store,auth,commerce,work);
   const amendments=new OperationalAmendments(store,auth,operations,work);
+  const onboarding=new BusinessOnboarding(store,auth,commerce);
+  const migration=new LegacyMigrationReconciler(store,auth);
+  const whatsapp=new WhatsAppService(store,flows,options.whatsappTransport);
+  const legacyPilots=new LegacyPilotsService(store);
+  const founderIntelligence=new FounderIntelligence(store,auth);
+  const social=new SocialConnections(auth);
   const origin=options.origin??'http://localhost:3000';
   const allowedOrigins=options.allowedOrigins??[origin];
   function json(data:unknown,status=200,extra:Record<string,string>={}) {return new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer',...extra}});}
@@ -80,6 +95,11 @@ export function createPlatformApp(options:PlatformAppOptions={}) {
       if(path==='/reports/definitions')return reports.definitions(actor);
       if(path==='/reports/build')return reports.build(actor,Object.fromEntries(url.searchParams),oneOf(url.searchParams.get('format')??'csv',['csv','html'] as const));
       if(path==='/campaigns')return marketing.all(actor);
+      if(path==='/social/connectors')return social.snapshot(actor);
+      if(path==='/founder-intelligence/identities')return founderIntelligence.identities(actor);
+      if(path==='/founder-intelligence/content')return founderIntelligence.content(actor);
+      if(path==='/founder-intelligence/events')return founderIntelligence.events(actor);
+      if(path==='/founder-intelligence/analytics')return founderIntelligence.analytics(actor);
       if(path==='/dealer/applications')return dealers.applications(actor);
       if(path==='/dealer/restocks')return dealers.restocks(actor);
       if(path==='/dealer/terms'){if(!actor.memberships.some(m=>m.dealerOrgId)&&!auth.has(actor,'founder'))fail('FORBIDDEN',403);return operations.settings().approvedPolicies.dealer??null;}
@@ -107,6 +127,8 @@ export function createPlatformApp(options:PlatformAppOptions={}) {
       if(path==='/reconciliations'){auth.founder(actor);return store.all('reconciliations');}
       if(path==='/payments'){auth.founder(actor);return store.all('payments');}
       if(path==='/jobs')return jobs.all(actor);
+      if(path==='/automations')return automationDefinitions.all(actor);
+      if(path==='/automation-runs')return automationDefinitions.runs(actor);
       if(path==='/runtime-controls')return runtimeControls.get(actor);
       if(path==='/automation/capabilities')return automation.capabilities(actor);
       if(path==='/automation/exports')return automation.exports(actor);
@@ -127,10 +149,21 @@ export function createPlatformApp(options:PlatformAppOptions={}) {
       if(path==='/overview')return overview(actor);
       if(path==='/people'){auth.founder(actor);return store.db.query<{id:string;email:string;name:string},[]>('SELECT id,email,name FROM users ORDER BY created_at').all().map(u=>({...u,memberships:auth.memberships(u.id)}));}
       if(path==='/settings'){if(auth.has(actor,'founder'))return operations.settings();const s=operations.settings();return {...s,approvedPolicies:{paymentInstructions:s.approvedPolicies.paymentInstructions,contact:s.approvedPolicies.contact,locations:s.approvedPolicies.locations,...(actor.memberships.some(m=>m.dealerOrgId)?{dealer:s.approvedPolicies.dealer}:{})}};}
-      if(path==='/health'){if(!auth.has(actor,'founder')&&!auth.has(actor,'developer'))fail('FORBIDDEN',403);return [{component:'platform_database',status:'ready',observedAt:now(),reasonCode:'LOCAL_SQLITE'},{component:'hermes',status:'unavailable',observedAt:now(),reasonCode:'ADAPTER_NOT_VERIFIED'},{component:'native_whatsapp',status:'unavailable',observedAt:now(),reasonCode:'FEATURE_DISABLED'},{component:'postiz',status:'unavailable',observedAt:now(),reasonCode:'ADAPTER_NOT_VERIFIED'},{component:'agent_reach',status:'unavailable',observedAt:now(),reasonCode:'ADAPTER_NOT_VERIFIED'}];}
+      if(path==='/health'){if(!auth.has(actor,'founder')&&!auth.has(actor,'developer'))fail('FORBIDDEN',403);return [{component:'platform_database',status:'ready',observedAt:now(),reasonCode:'LOCAL_SQLITE'},{component:'hermes',status:options.automationOptions?.hermes?'ready':'unavailable',observedAt:now(),reasonCode:options.automationOptions?.hermes?'LOCAL_HERMES_TRANSPORT_ACTIVE':'ADAPTER_NOT_VERIFIED'},{component:'native_whatsapp',status:options.whatsappTransport?'ready':'unavailable',observedAt:now(),reasonCode:options.whatsappTransport?'WHATSAPP_TRANSPORT_ACTIVE':'FEATURE_DISABLED'},{component:'postiz',status:options.automationOptions?.postiz?'ready':'unavailable',observedAt:now(),reasonCode:options.automationOptions?.postiz?'LOCAL_POSTIZ_TRANSPORT_ACTIVE':'ADAPTER_NOT_VERIFIED'},{component:'agent_reach',status:options.automationOptions?.agentReach?'ready':'unavailable',observedAt:now(),reasonCode:options.automationOptions?.agentReach?'LOCAL_AGENT_REACH_TRANSPORT_ACTIVE':'ADAPTER_NOT_VERIFIED'}];}
+      if(path==='/onboarding/template'){auth.founder(actor);return {products:[],locations:[{id:'hq',name:'HQ / Pusat Operasi',address:''}],dealerTerms:{minimumQuantity:50,packMultiple:10,priceBasisPoints:7000,ownership:'owned',returnRules:'Tiada return bagi balang dibuka.',approved:false}};}
+      if(path==='/migration/receipts'){auth.founder(actor);return store.all('migration_receipts');}
+      if(path==='/pilots/workspace/grants')return store.all('workspace_grants').filter((g:any)=>g.userId===actor.user.id);
+      if(path==='/pilots/bus-freight/routes')return VERIFIED_BUS_ROUTES;
+      if(path==='/pilots/bus-freight/shipments')return store.all('bus_shipments');
+      if(path==='/pilots/founder-assistant/proposals'){auth.founder(actor);return store.all('founder_proposals');}
     }
     if(method==='POST') {
       if(path==='/auth/logout'){auth.logout(actor);return {loggedOut:true};}
+      if(path==='/onboarding/validate'){auth.founder(actor);return onboarding.validate(object(input) as any);}
+      if(path==='/onboarding/commit')return onboarding.commit(actor,object(input) as any);
+      if(path==='/migration/dry-run'){auth.founder(actor);const body=object(input);return migration.dryRun(list(body.records,500));}
+      if(path==='/migration/import'){const body=object(input);return migration.executeImport(actor,list(body.records,500));}
+      if(segments[0]==='migration'&&segments[1]==='rollback'&&segments[2])return migration.rollback(actor,segments[2]);
       if(path==='/catalogue')return commerce.saveProduct(actor,input);
       if(path==='/flows')return flows.save(actor,input);
       if(path==='/flow-sessions')return flows.start(actor,input);
@@ -159,6 +192,10 @@ export function createPlatformApp(options:PlatformAppOptions={}) {
       if(path==='/people/revoke')return auth.revoke(actor,input);
       if(path==='/settings')return operations.saveSettings(actor,input);
       if(path==='/campaigns')return marketing.save(actor,input);
+      if(path==='/founder-intelligence/identities')return founderIntelligence.saveIdentity(actor,input);
+      if(path==='/founder-intelligence/content')return founderIntelligence.saveContent(actor,input);
+      if(path==='/founder-intelligence/events')return founderIntelligence.saveEvent(actor,input);
+      if(path==='/founder-intelligence/outcomes')return founderIntelligence.linkOutcome(actor,input);
       if(segments[0]==='campaigns'&&recordId){if(command==='update')return marketing.save(actor,input,recordId);if(command==='approve')return marketing.approve(actor,recordId,input);if(command==='export'){const artifact=marketing.export(actor,recordId,input,key);return evidenceFiles.export(actor,artifact,marketing.get(actor,recordId));}if(command==='publish')fail('PUBLISHER_UNAVAILABLE',409,'Saluran penerbit belum disahkan. Eksport manual tersedia.');}
       if(path==='/dealer/applications')return dealers.apply(actor,input);
       if(path==='/dealer/commission-policies')return dealers.saveCommissionPolicy(actor,input);
@@ -190,6 +227,8 @@ export function createPlatformApp(options:PlatformAppOptions={}) {
       if(path==='/qc/sops')return operations.saveQcSop(actor,input);
       if(segments[0]==='qc'&&recordId&&command==='release')return operations.releaseQc(actor,recordId,input);
       if(path==='/jobs')return jobs.enqueue(actor,input,key);
+      if(path==='/automations')return automationDefinitions.save(actor,input);
+      if(segments[0]==='automations'&&recordId){if(command==='update')return automationDefinitions.save(actor,input,recordId);if(command==='toggle')return automationDefinitions.toggle(actor,recordId,input);}
       if(path==='/runtime-controls')return runtimeControls.change(actor,input);
       if(path==='/research/sources')return automation.captureSource(actor,input,key);
       if(path==='/research/briefs')return automation.saveBrief(actor,input,key);
@@ -199,12 +238,19 @@ export function createPlatformApp(options:PlatformAppOptions={}) {
       if(path==='/jev/assessments')return jevEvaluations.assess(actor,input);
       if(path==='/jev/evaluations')return jevEvaluations.evaluate(actor,input);
       if(segments[0]==='jobs'&&recordId&&command==='cancel'){fields(object(input),[]);return jobs.cancel(actor,recordId);}
-      if(path==='/research'){auth.founder(actor);fail('RESEARCH_ADAPTER_UNAVAILABLE',409,'Research automatik belum disahkan. Rekod sumber secara manual dalam dokumen.');}
+      if(path==='/pilots/workspace/consent')return legacyPilots.grantWorkspaceConsent(actor.user.id,list(object(input).scopes) as any);
+      if(path==='/pilots/workspace/revoke')return legacyPilots.revokeWorkspaceConsent(actor.user.id,text(object(input).grantId));
+      if(path==='/pilots/workspace/execute'){const b=object(input);return legacyPilots.executeWorkspaceOperation(actor.user.id,oneOf(b.operation,['draft_doc','sync_calendar','export_sheet'] as const),text(b.entityId),b.payload as any);}
+      if(path==='/pilots/bus-freight/shipments')return legacyPilots.createBusFreightShipment(actor.user.id,object(input) as any);
+      if(segments[0]==='pilots'&&segments[1]==='bus-freight'&&segments[2]==='shipments'&&segments[3]&&command==='status')return legacyPilots.updateBusFreightStatus(actor.user.id,segments[3],oneOf(object(input).status,['booked','departed','received'] as const));
+      if(path==='/pilots/founder-assistant/propose')return legacyPilots.proposeFounderAction(actor.user.id,text(object(input).query));
+      if(path==='/pilots/founder-assistant/review'){auth.founder(actor);const b=object(input);return legacyPilots.reviewFounderProposal(actor.user.id,text(b.proposalId),oneOf(b.decision,['approved','rejected'] as const));}
+      if(path==='/pilots/founder-assistant/execute'){auth.founder(actor);return legacyPilots.executeFounderProposal(actor.user.id,text(object(input).proposalId));}
     }
     fail('NOT_FOUND',404,'Laluan tidak ditemui.');
   }
   return {
-    store, auth, commerce, work, jobs,
+    store, auth, commerce, work, jobs, automationDefinitions, legacyPilots, founderIntelligence,
     async fetch(request:Request):Promise<Response> {
       const requestId=randomUUID();
       try {
@@ -222,6 +268,20 @@ export function createPlatformApp(options:PlatformAppOptions={}) {
         if(request.method==='GET'&&path==='/public-info'){const p=operations.settings().approvedPolicies;return json({ok:true,data:{contact:p.contact??null,paymentInstructions:p.paymentInstructions??null,locations:p.locations??[],version:operations.settings().version}});}
         if(request.method==='GET'&&path==='/flows')return json({ok:true,data:flows.all()});
         if(request.method==='GET'&&path.startsWith('/flows/'))return json({ok:true,data:flows.definition(path.slice(7))});
+        if(request.method==='GET'&&path==='/whatsapp/webhook'){
+          const mode = url.searchParams.get('hub.mode');
+          const token = url.searchParams.get('hub.verify_token');
+          const challenge = url.searchParams.get('hub.challenge');
+          const expectedToken = options.whatsappTransport?.webhookSecret ?? 'whatsapp-verify-token';
+          const verified = whatsapp.verifyWebhook(mode, token, challenge, expectedToken);
+          return new Response(verified, { status: 200, headers: { 'Content-Type': 'text/plain' } });
+        }
+        if(request.method==='POST'&&path==='/whatsapp/webhook'){
+          const signature = request.headers.get('x-hub-signature-256');
+          const rawBody = JSON.stringify(input);
+          const result = whatsapp.processWebhook(signature, rawBody);
+          return json({ ok: true, data: result });
+        }
         if(request.method==='POST'&&['/auth/signup','/auth/login','/auth/bootstrap'].includes(path)) {
           store.rate('identity-global',options.rateLimits?.identityGlobal??30);const authInput=object(input);if(typeof authInput.email==='string')store.rate(`identity:${authInput.email.toLowerCase()}`,options.rateLimits?.identityAccount??6);
           const result=await auth.authenticate(path.slice(6) as 'signup'|'login'|'bootstrap',input);
@@ -233,7 +293,44 @@ export function createPlatformApp(options:PlatformAppOptions={}) {
         if(request.method==='POST')auth.csrf(actor,request.headers.get('x-csrf-token'));
         if(request.method==='POST'&&runtimeControls.current().activeRelease==='platform-local-readonly-v1'&&!['/runtime-controls','/auth/logout'].includes(path))fail('RELEASE_READ_ONLY',409,'Release semasa hanya membenarkan bacaan. Data kekal tersimpan.');
         if(request.method==='POST'&&path.startsWith('/legacy-ai/'))return json(await generateLegacyContent(auth,actor,path,input));
-        if(request.method==='POST'&&path==='/research/run')return json({ok:true,data:await automation.research(actor,input,request.headers.get('idempotency-key'))});
+        if(request.method==='POST'&&path==='/research'){
+          auth.founder(actor);
+          if(!options.automationOptions?.agentReach) fail('RESEARCH_ADAPTER_UNAVAILABLE',409,'Agent-Reach research adapter belum disahkan.');
+          const idemKey = request.headers.get('idempotency-key') ?? request.headers.get('x-idempotency-key');
+          return json({ok:true,data:await automation.research(actor,input,idemKey)});
+        }
+        if(request.method==='POST'&&path==='/research/run'){
+          auth.founder(actor);
+          const idemKey = request.headers.get('idempotency-key') ?? request.headers.get('x-idempotency-key');
+          return json({ok:true,data:await automation.research(actor,input,idemKey)});
+        }
+        if(request.method==='POST'&&path==='/hermes/run'){
+          auth.founder(actor);
+          if(!options.automationOptions?.hermes) fail('HERMES_UNAVAILABLE',409,'Hermes runtime transport belum disahkan.');
+          const hermes=new HermesAdapter(options.automationOptions.hermes, options.automationOptions.timeoutMs);
+          const body=object(input); fields(body,['task']); const task=object(body.task);
+          const usage=options.automationOptions.externalUsage?.() ?? { providerId: 'hermes', observedUnits: 1, limitUnits: 100, available: true, observedAt: now() };
+          return json({ok:true,data:await hermes.run(task as any, usage, new AbortController().signal)});
+        }
+        if(request.method==='POST'&&/^\/campaigns\/[^/]+\/postiz-publish$/.test(path)){
+          auth.founder(actor);
+          const campaignId = path.split('/')[2];
+          const idemKey = request.headers.get('idempotency-key') ?? request.headers.get('x-idempotency-key');
+          return json({ok:true,data:await automation.publishPostiz(actor,campaignId,input,idemKey)});
+        }
+        if(request.method==='POST'&&path==='/automation/postiz/reconcile'){
+          auth.founder(actor);
+          return json({ok:true,data:await automation.reconcilePostiz(actor,input)});
+        }
+        if(request.method==='POST'&&path==='/automation/postiz/cancel'){
+          auth.founder(actor);
+          return json({ok:true,data:await automation.cancelPostiz(actor,input)});
+        }
+        if(request.method==='POST'&&path==='/whatsapp/send'){
+          auth.founder(actor);
+          const idemKey = request.headers.get('idempotency-key') ?? request.headers.get('x-idempotency-key');
+          return json({ok:true,data:await whatsapp.sendTemplateMessage(actor,input,idemKey)});
+        }
         const data=request.method==='POST'?store.atomic(()=>postRoute(actor,path,input,request.headers.get('idempotency-key'),url)):route(actor,request.method,path,input,null,url);
         if(Array.isArray(data))return collection(data,url);
         return json({ok:true,data},200,path==='/auth/logout'?{'Set-Cookie':cookieClear}:{});

@@ -8,3 +8,10 @@ test('runtime defaults remain local and production origins require an exact HTTP
   expect(()=>runtimeConfig({PLATFORM_PORT:'abc'})).toThrow();
   expect(()=>runtimeConfig({PLATFORM_HOST:'0.0.0.0'})).toThrow();
 });
+
+test('runtime root and loopback URL are explicit and validated before writes',()=>{
+  expect(runtimeConfig({}).runtimeRoot).toBe('var');
+  expect(runtimeConfig({PLATFORM_RUNTIME_ROOT:'runtime-other'}).runtimeRoot).toBe('runtime-other');
+  expect(runtimeConfig({PLATFORM_HOST:'::1'}).target).toBe('http://[::1]:3010');
+  for(const value of ['', '   ', 'invalid\0path'])expect(()=>runtimeConfig({PLATFORM_RUNTIME_ROOT:value})).toThrow();
+});

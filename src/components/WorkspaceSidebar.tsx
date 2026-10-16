@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { PanelLeftClose, PanelLeftOpen, Moon, Sun, Activity, Bot, Briefcase, Calendar, ChevronRight, Database, FileSpreadsheet, FileText, Flame, FolderOpen, Gauge, Mail, MapPin, MessageSquare, Search, Truck, Video, Zap, CheckSquare } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Moon, Sun, Activity, Bot, Briefcase, Calendar, ChevronRight, Database, FileSpreadsheet, FileText, Flame, FolderOpen, Gauge, Mail, MapPin, MessageSquare, Search, Truck, Video, Zap, CheckSquare, ShoppingBag, Store } from 'lucide-react';
 import type { User } from 'firebase/auth';
 import { subscribeAuth } from '@/services/googleAuth';
 import { useSupabaseAuth } from '@/services/supabaseAuth';
@@ -7,6 +7,8 @@ import { useSupabaseAuth } from '@/services/supabaseAuth';
 const groups = [
   { title: 'Bisnes & operasi', items: [
     { id: 'dashboards', label: 'Ringkasan bisnes', icon: Activity },
+    { id: 'kiosk', label: 'Kios & jualan pantas', icon: ShoppingBag },
+    { id: 'agent_portal', label: 'Portal restok stokis', icon: Store },
     { id: 'orders', label: 'Pesanan', icon: Database },
     { id: 'bus_freight', label: 'Logistik & kargo', icon: Truck },
     { id: 'maps', label: 'Peta penghantaran', icon: MapPin },
